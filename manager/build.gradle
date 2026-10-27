@@ -3,6 +3,7 @@ plugins {
     id "magisk.app.signing"
     id "magisk.app.packaging"
     id "org.jetbrains.kotlin.plugin.serialization"
+    id "magisk.android.compose"
     id "dev.rikka.tools.refine"
 }
 
@@ -27,6 +28,7 @@ android {
         buildConfig = true
         viewBinding = true
         prefab = true
+        compose = true
     }
     externalNativeBuild {
         cmake {
@@ -105,7 +107,6 @@ dependencies {
     implementation libs.androidx.recyclerview
     implementation libs.androidx.lifecycle.viewmodel.ktx
     implementation libs.androidx.lifecycle.livedata.ktx
-    implementation libs.androidx.preference.ktx
     implementation libs.androidx.work.runtime.ktx
 
     implementation libs.apksig
@@ -117,13 +118,11 @@ dependencies {
     implementation libs.rikka.compatibility
     implementation libs.rikka.core.ktx
     implementation libs.rikka.material
-    implementation libs.rikka.material.preference
     implementation libs.rikka.html.ktx
     implementation libs.rikka.recyclerview.adapter
     implementation libs.rikka.recyclerview.ktx
     implementation libs.rikka.insets
     implementation libs.rikka.layoutinflater
-    implementation libs.rikka.preference.simplemenu
     implementation libs.rikka.lifecycle.resource.livedata
 
     implementation libs.arscblib
@@ -133,4 +132,12 @@ dependencies {
     implementation libs.libcxx
     implementation libs.hiddenapibypass
     implementation libs.appiconloader
+
+    // Compose: magisk.android.compose already pulls the BOM, ui, material3,
+    // ui-tooling-preview, activity-compose and the lifecycle-compose trio.
+    implementation libs.androidx.compose.foundation
+    implementation libs.androidx.compose.material.icons.extended
+    debugImplementation libs.androidx.compose.ui.tooling
+
+    implementation project(":magisk-ui-kit")
 }
