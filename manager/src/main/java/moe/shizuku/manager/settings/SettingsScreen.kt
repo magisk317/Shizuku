@@ -329,11 +329,11 @@ fun SettingsScreen(
 
         if (showLegacyPairing) {
             SectionCard(
-            title = stringResource(R.string.settings_advanced),
-            accordionMode = false,
-            sectionExpanded = true,
-            onExpandedChange = {},
-        ) {
+                title = stringResource(R.string.settings_advanced),
+                accordionMode = false,
+                sectionExpanded = true,
+                onExpandedChange = {},
+            ) {
                 StateSwitchItem(
                     title = stringResource(R.string.settings_legacy_pairing),
                     summary = "",
