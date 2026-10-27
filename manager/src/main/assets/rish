@@ -7,21 +7,32 @@ if [ ! -f "$DEX" ]; then
   exit 1
 fi
 
-if [ $(getprop ro.build.version.sdk) -ge 34 ]; then
-  if [ -w $DEX ]; then
-    echo "On Android 14+, app_process cannot load writable dex."
-    echo "Attempting to remove the write permission..."
-    chmod 400 $DEX
-    if [ -w $DEX ]; then
-      echo "Cannot remove the write permission of $DEX."
-      echo "You can copy to file to terminal app's private directory (/data/data/<package>, so that remove write permission is possible"
-      exit 1
-    else
-      echo "Write permission was removed successfully."
+# A minified build ships a single rish_shizuku.dex; an unminified one splits the
+# shell module across rish_shizuku2.dex and beyond. app_process takes a
+# ":"-separated classpath, so collect every part.
+CP=""
+for f in "$BASEDIR"/rish_shizuku*.dex; do
+  [ -f "$f" ] || continue
+
+  if [ $(getprop ro.build.version.sdk) -ge 34 ]; then
+    if [ -w "$f" ]; then
+      echo "On Android 14+, app_process cannot load writable dex."
+      echo "Attempting to remove the write permission..."
+      chmod 400 "$f"
+      if [ -w "$f" ]; then
+        echo "Cannot remove the write permission of $f."
+        echo "You can copy to file to terminal app private directory (/data/data/<package>, so that remove write permission is possible"
+        exit 1
+      else
+        echo "Write permission was removed successfully."
+      fi
     fi
   fi
-fi
+
+  CP="$CP:$f"
+done
+CP=${CP#:}
 
 # Replace "PKG" with the application id of your terminal app and "MANAGER_PKG" with the application id of Shizuku
 [ -z "$RISH_APPLICATION_ID" ] && export RISH_APPLICATION_ID="PKG" && export MANAGER_APPLICATION_ID="MANAGER_PKG"
-/system/bin/app_process -Djava.class.path="$DEX" /system/bin --nice-name=rish rikka.shizuku.shell.ShizukuShellLoader "$@"
+/system/bin/app_process -Djava.class.path="$CP" /system/bin --nice-name=rish rikka.shizuku.shell.ShizukuShellLoader "$@"
