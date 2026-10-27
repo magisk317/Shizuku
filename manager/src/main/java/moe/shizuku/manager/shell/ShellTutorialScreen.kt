@@ -35,6 +35,8 @@ private const val SH_NAME = "rish"
 private const val DEX_NAME = "rish_shizuku.dex"
 private const val COPY_COMMAND = "cp /sdcard/chosen-folder/* /data/data/terminal.package.name/files"
 private const val RUN_COMMAND = "sh /path/to/$SH_NAME"
+private const val SH_MONO = "<font face=\"monospace\">$SH_NAME</font>"
+private const val DEX_MONO = "<font face=\"monospace\">$DEX_NAME</font>"
 
 /**
  * Compose replacement for the rish tutorial scroll: the intro card (which
@@ -63,7 +65,7 @@ fun ShellTutorialScreen(
             onClick = onOpenRishDocs,
         ) {
             Text(
-                rememberHtmlText(R.string.rish_description),
+                rememberHtmlText(R.string.rish_description, SH_MONO),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
@@ -91,7 +93,7 @@ fun ShellTutorialScreen(
         StepRow(stepIcon = R.drawable.ic_numeric_1_circle_outline_24) {
             Text(stringResource(R.string.terminal_tutorial_1), style = MaterialTheme.typography.bodyLarge)
             Text(
-                rememberHtmlText(R.string.terminal_tutorial_1_description, SH_NAME, DEX_NAME),
+                rememberHtmlText(R.string.terminal_tutorial_1_description, SH_MONO, DEX_MONO),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -102,12 +104,12 @@ fun ShellTutorialScreen(
 
         StepRow(stepIcon = R.drawable.ic_numeric_2_circle_outline_24) {
             Text(
-                rememberHtmlText(R.string.terminal_tutorial_2, SH_NAME),
+                rememberHtmlText(R.string.terminal_tutorial_2, SH_MONO),
                 style = MaterialTheme.typography.bodyLarge,
             )
             SelectableCommand(COPY_COMMAND)
             Text(
-                rememberHtmlText(R.string.terminal_tutorial_2_description, SH_NAME, SH_NAME, ".bashrc"),
+                rememberHtmlText(R.string.terminal_tutorial_2_description, SH_MONO, SH_MONO, ".bashrc"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
