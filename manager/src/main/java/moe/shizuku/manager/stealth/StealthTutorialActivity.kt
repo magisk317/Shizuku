@@ -1,142 +1,100 @@
 package moe.shizuku.manager.stealth
 
-import android.content.Context
-import android.content.res.Resources
-import android.graphics.Color
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
-import android.view.View
-import android.view.ViewGroup.MarginLayoutParams
-import android.widget.Toast
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat.Type
-import androidx.core.view.doOnNextLayout
-import androidx.core.view.isInvisible
-import androidx.core.view.isVisible
-import androidx.core.view.updateLayoutParams
-import androidx.core.view.updatePadding
-import androidx.core.widget.addTextChangedListener
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.material.appbar.AppBarLayout
+import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import java.io.File
 import android.util.Log
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppBarActivity
-import moe.shizuku.manager.databinding.StealthTutorialActivityBinding
+import moe.shizuku.manager.app.ShizukuTheme
+import moe.shizuku.manager.app.ThemeHelper
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.utils.ApkUtils.*
-import rikka.core.util.ClipboardUtils
+import androidx.lifecycle.asFlow
 
 class StealthTutorialActivity : AppBarActivity() {
     private val viewModel: StealthTutorialViewModel by viewModels()
-    private lateinit var binding: StealthTutorialActivityBinding
 
     private lateinit var outDir: Uri
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = StealthTutorialActivityBinding.inflate(layoutInflater, rootView, true)
-
         onBackPressedDispatcher.addCallback(this, backCallback)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        with(binding) {
-            viewModel.uiState.observe(this@StealthTutorialActivity) { state ->
-                val isLoadingOrPending = (state is UiState.Loading || state is UiState.Pending)
-                fab.isInvisible = isLoadingOrPending
-                loadingFab.isVisible = isLoadingOrPending
+        // The content must carry the scrolling-view behaviour like every View-based
+        // child of the CoordinatorLayout root, or it renders from under the toolbar.
+        val params = CoordinatorLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
 
-                when (state) {
-                    is UiState.Idle -> {
-                        val action = state.action
+        setContentView(ComposeView(this).apply {
+            setContent {
+                val state by viewModel.uiState.asFlow()
+                    .collectAsStateWithLifecycle(initialValue = null)
 
-                        packageNameContainer.isVisible = (action == Action.HIDE)
-                        if (packageNameContainer.isVisible) makeNavBarTransparent()
-
-                        fab.update(action)
-                        fab.setOnClickListener { onClick(action) }
-                    }
-
-                    is UiState.Loading -> Unit
-                    null -> Unit
-
-                    is UiState.Pending -> {
-                        try {
-                            val apk = state.apk
-                            when (state.apkType) {
-                                ApkType.CLONE -> {
-                                    export(apk)
-                                    viewModel.refresh()
-                                    showUninstallDialog()
+                ShizukuTheme(
+                    nightMode = ShizukuSettings.getNightMode(),
+                    blackNightTheme = ThemeHelper.isBlackNightTheme(this@StealthTutorialActivity),
+                    useSystemColor = ThemeHelper.isUsingSystemColor(),
+                ) {
+                    StealthTutorialScreen(
+                        state = state,
+                        onAction = { action, packageNameInput ->
+                            when (action) {
+                                Action.HIDE -> {
+                                    viewModel.setPackageName(packageNameInput)
+                                    showChooseFolderDialog()
                                 }
-
-                                ApkType.STUB -> {
-                                    installPackage(apk) { isSuccess, msg -> handleInstallerResult(isSuccess, msg) }
+                                Action.UNHIDE -> viewModel.createApk(ApkType.STUB)
+                                Action.REHIDE -> uninstallPackage(ORIGINAL_PACKAGE_NAME) { isSuccess, msg ->
+                                    handleInstallerResult(isSuccess, msg)
                                 }
                             }
-                        } catch (e: Exception) {
-                            showErrorDialog(e)
+                        },
+                    )
+                }
+            }
+        }, params)
+
+        viewModel.uiState.observe(this) { state ->
+            when (state) {
+                is UiState.Idle -> if (state.action == Action.HIDE) makeNavBarTransparent()
+                is UiState.Pending -> {
+                    try {
+                        val apk = state.apk
+                        when (state.apkType) {
+                            ApkType.CLONE -> {
+                                export(apk)
+                                viewModel.refresh()
+                                showUninstallDialog()
+                            }
+
+                            ApkType.STUB -> {
+                                installPackage(apk) { isSuccess, msg -> handleInstallerResult(isSuccess, msg) }
+                            }
                         }
-                    }
-                    is UiState.Error -> showErrorDialog(state.error)
-                }
-            }
-
-            packageNameEditText.apply {
-                addTextChangedListener { text ->
-                    val input = text.toString()
-
-                    packageNameLayout.error =
-                        input.validatePackageName()?.let { getString(it) }
-
-                    packageNameLayout.helperText =
-                        if (input.isEmpty()) {
-                            getString(R.string.stealth_package_name_helper_text)
-                        } else {
-                            null
-                        }
-
-                    fab.isEnabled = (packageNameLayout.error == null)
-                }
-            }
-
-            compatibilityCard.setOnClickListener { v: View ->
-                val context = v.context
-                if (
-                    ClipboardUtils.put(context, codeSnippet) &&
-                    Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2
-                ) {
-                    Toast
-                        .makeText(
-                            context,
-                            context.getString(R.string.toast_copied_to_clipboard),
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                }
-            }
-
-            ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
-                val systemBarsInsets = insets.getInsets(Type.systemBars())
-                val fabBottomMargin =
-                    if (packageNameContainer.isVisible) -12.dp else (systemBarsInsets.bottom + 16.dp)
-                    
-                listOf(fab, loadingFab).forEach {
-                    it.updateLayoutParams<MarginLayoutParams> {
-                        bottomMargin = fabBottomMargin
+                    } catch (e: Exception) {
+                        showErrorDialog(e)
                     }
                 }
-                
-                insets
-            }
-
-            root.viewTreeObserver.addOnGlobalLayoutListener {
-                scrollView.updatePadding(bottom = root.height - fab.top)
+                is UiState.Error -> showErrorDialog(state.error)
+                is UiState.Loading, null -> Unit
             }
         }
     }
@@ -146,22 +104,6 @@ class StealthTutorialActivity : AppBarActivity() {
             unregisterReceiver(installerReceiver)
         }.onFailure { Log.w(AppConstants.TAG, "Failed to unregister the install receiver", it) }
         super.onDestroy()
-    }
-
-    private fun onClick(action: Action) {
-        when (action) {
-            Action.HIDE -> {
-                val packageName =
-                    binding.packageNameEditText.text
-                        .toString()
-                        .ifEmpty { null }
-                viewModel.setPackageName(packageName)
-
-                showChooseFolderDialog()
-            }
-            Action.UNHIDE -> viewModel.createApk(ApkType.STUB)
-            Action.REHIDE -> uninstallPackage(ORIGINAL_PACKAGE_NAME)  { isSuccess, msg -> handleInstallerResult(isSuccess, msg) }
-        }
     }
 
     private fun showChooseFolderDialog() {
@@ -235,21 +177,11 @@ class StealthTutorialActivity : AppBarActivity() {
             .show()
     }
 
-    private fun ExtendedFloatingActionButton.update(action: Action) {
-        if (action == Action.UNHIDE) {
-            setIconResource(R.drawable.ic_visibility_on_filled_24)
-            text = getString(R.string.stealth_unhide)
-        } else{
-            setIconResource(R.drawable.ic_visibility_off_filled_24)
-            text = getString(R.string.stealth_hide)
-        }
-    }
-
     private val backCallback =
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val uiState = viewModel.uiState.value
-                if (uiState is UiState.Idle || uiState is UiState.Error) {
+                if (uiState is UiState.Idle || uiState is UiState.Error || uiState == null) {
                     finish()
                     return
                 }
@@ -269,28 +201,9 @@ class StealthTutorialActivity : AppBarActivity() {
     // Window.navigationBarColor is deprecated with no replacement below API 35.
     @Suppress("DEPRECATION")
     private fun makeNavBarTransparent() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            window.navigationBarColor = Color.TRANSPARENT
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q)
             window.isNavigationBarContrastEnforced = false
     }
-
-    val Int.dp: Int
-        get() = (this * Resources.getSystem().displayMetrics.density).toInt()
 }
-
-private const val codeSnippet = """
-import android.content.Context
-import rikka.shizuku.ShizukuProvider
-
-private fun Context.shizukuPermission() =
-    runCatching {
-        packageManager.getPermissionInfo(ShizukuProvider.PERMISSION, 0)
-    }.getOrNull()
-
-fun Context.isShizukuInstalled() =
-    shizukuPermission() != null
-
-fun Context.getShizukuPackageName() =
-    shizukuPermission()?.packageName
-"""
