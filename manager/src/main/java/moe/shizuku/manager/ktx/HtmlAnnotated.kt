@@ -29,7 +29,10 @@ import rikka.html.text.HtmlCompat as RikkaHtmlCompat
 @Composable
 fun rememberHtmlText(res: Int, vararg formatArgs: String): AnnotatedString {
     val linkColor = MaterialTheme.colorScheme.primary
-    val raw = stringResource(res, *formatArgs)
+    // The vararg stringResource overload always runs String.format, so an empty
+    // argument list crashes on strings that still carry %1\$s (the rish
+    // description). Only take the formatting path when arguments were passed.
+    val raw = if (formatArgs.isEmpty()) stringResource(res) else stringResource(res, *formatArgs)
     return remember(raw, linkColor) { raw.toHtmlAnnotated(linkColor) }
 }
 
