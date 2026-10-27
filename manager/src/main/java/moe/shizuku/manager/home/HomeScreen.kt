@@ -262,7 +262,7 @@ private fun StartWirelessAdbCard(
                 Text(stringResource(R.string.home_wireless_adb_title), style = MaterialTheme.typography.titleMedium)
             }
             Text(
-                stringResource(
+                rememberHtmlText(
                     if (tlsSupported) R.string.home_wireless_adb_description
                     else R.string.home_wireless_adb_description_pre_11
                 ),
