@@ -26,7 +26,7 @@ public class Helps {
         APPS.put("zh-TW", "https://shizuku.rikka.app/zh-hant/apps/");
         APPS.put("en", "https://shizuku.rikka.app/apps/");
 
-        HOME.put("en", "https://github.com/RikkaApps/Shizuku/tree/master/README.md#developer-guide");
+        HOME.put("en", "https://github.com/magisk317/Shizuku/tree/master/README.md#developer-guide");
 
         DOWNLOAD.put("zh-CN", "https://shizuku.rikka.app/zh-hans/download/");
         DOWNLOAD.put("zh-TW", "https://shizuku.rikka.app/zh-hant/download/");
@@ -38,6 +38,6 @@ public class Helps {
 
         SUI.put("en", "https://github.com/RikkaApps/Sui");
 
-        RISH.put("en", "https://github.com/RikkaApps/Shizuku-API/tree/master/rish");
+        RISH.put("en", "https://github.com/magisk317/Shizuku-API/tree/master/rish");
     }
 }

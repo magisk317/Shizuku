@@ -140,7 +140,7 @@ object ShizukuReceiverStarter {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.createNotificationChannel(channel)
 
-        val webpageIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/thedjchi/Shizuku/wiki#shizuku-isnt-starting-on-boot-for-me"))
+        val webpageIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/magisk317/Shizuku/wiki#shizuku-isnt-starting-on-boot-for-me"))
         val pendingWebpageIntent = PendingIntent.getActivity(
             context, 0, webpageIntent, PendingIntent.FLAG_IMMUTABLE
         )

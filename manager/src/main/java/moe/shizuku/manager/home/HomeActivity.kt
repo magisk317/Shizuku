@@ -200,7 +200,7 @@ abstract class HomeActivity : AppBarActivity() {
                 binding.sourceCode.movementMethod = LinkMovementMethod.getInstance()
                 binding.sourceCode.text = getString(
                     R.string.about_view_source_code,
-                    "<b><a href=\"https://github.com/thedjchi/Shizuku\">GitHub</a></b>"
+                    "<b><a href=\"https://github.com/magisk317/Shizuku\">GitHub</a></b>"
                 ).toHtml()
                 binding.icon.setImageBitmap(
                     AppIconCache.getOrLoadBitmap(
@@ -218,10 +218,6 @@ abstract class HomeActivity : AppBarActivity() {
                     }
                 }
 
-                binding.btnDonate.setOnClickListener {
-                    CustomTabsHelper.launchUrlOrCopy(this, "https://www.buymeacoffee.com/thedjchi")
-                }
-
                 val dialog = MaterialAlertDialogBuilder(this)
                     .setView(binding.root)
                     .create()
@@ -229,6 +225,7 @@ abstract class HomeActivity : AppBarActivity() {
                 binding.btnClose.setOnClickListener {
                     dialog.dismiss()
                 }
+                binding.btnDonate.visibility = android.view.View.GONE
                 
                 dialog.show()
                 true
