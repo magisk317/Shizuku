@@ -225,6 +225,15 @@
         </receiver>
 
         <receiver
+            android:name=".receiver.UserPresentRestartReceiver"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".receiver.ManualStartReceiver"
             android:enabled="true"
             android:exported="true">

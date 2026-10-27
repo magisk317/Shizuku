@@ -5,48 +5,65 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.asFlow
 import androidx.work.*
 import java.io.EOFException
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
+import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbMdns
 import moe.shizuku.manager.adb.AdbStarter
+import moe.shizuku.manager.adb.AdbWirelessHelper
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter.WorkerState
 import moe.shizuku.manager.receiver.ShizukuReceiverStarter.updateNotification
+import moe.shizuku.manager.receiver.UserPresentRestartReceiver
 import moe.shizuku.manager.settings.BugReportDialogActivity
 import moe.shizuku.manager.starter.Starter
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.ShizukuStateMachine
+import moe.shizuku.manager.utils.UserHandleCompat
 
 class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+
+    private val adbWirelessHelper = AdbWirelessHelper()
+
     override suspend fun doWork(): Result {
         try {
-            updateNotification(
-                applicationContext,
-                WorkerState.RUNNING
-            )
+            updateNotification(applicationContext, WorkerState.RUNNING)
+
+            if (UserHandleCompat.myUserId() > 0 || ShizukuStateMachine.isRunning()) {
+                UserPresentRestartReceiver.setEnabled(applicationContext, false)
+                return Result.success()
+            }
+
+            // A locked device cannot authorize the wireless debugging network, so
+            // park the start until the unlock instead of spending the retries on an
+            // authorization dialog nobody can see.
+            val km = applicationContext.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            if (km.isDeviceLocked || km.isKeyguardLocked) {
+                Log.i(AppConstants.TAG, "Wireless boot start waiting for unlock")
+                UserPresentRestartReceiver.setEnabled(applicationContext, true)
+                updateNotification(applicationContext, WorkerState.AWAITING_UNLOCK)
+                return Result.success()
+            }
+            UserPresentRestartReceiver.setEnabled(applicationContext, false)
 
             val cr = applicationContext.contentResolver
 
@@ -58,7 +75,10 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 AdbStarter.stopTcp(applicationContext, tcpPort)
             }
 
-            val port = tcpPort.takeIf { !EnvironmentUtils.isWifiRequired() } ?: callbackFlow {
+            // A port that is already known skips both mDNS discovery and the
+            // UNMETERED constraint, which is what makes a repeat boot start finish
+            // before the user notices anything happened.
+            val port = adbWirelessHelper.getStartableAdbPort() ?: callbackFlow {
                 val adbMdns = AdbMdns(applicationContext, AdbMdns.TLS_CONNECT) { p ->
                     if (p.second > 0) trySend(p.second)
                 }
@@ -127,7 +147,7 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     unlockReceiver?.let { applicationContext.unregisterReceiver(it) }
                 }
             }.first()
-            
+
             AdbStarter.startAdb(applicationContext, port)
             Starter.waitForBinder()
 
@@ -158,13 +178,19 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
             if (ShizukuStateMachine.update() == ShizukuStateMachine.State.RUNNING) {
                 return Result.success()
-            } else {
-                updateNotification(
-                    applicationContext,
-                    WorkerState.AWAITING_RETRY
-                )
-                return Result.retry()
             }
+
+            // Retrying forever keeps a device that can never start (no Wi-Fi, no
+            // WRITE_SECURE_SETTINGS, adbd refusing the port) awake for nothing, so
+            // give up and let the notification carry the reason.
+            if (runAttemptCount >= MAX_ATTEMPTS) {
+                Log.w(AppConstants.TAG, "Wireless boot start gave up after $runAttemptCount attempts")
+                updateNotification(applicationContext, WorkerState.STOPPED)
+                return Result.failure()
+            }
+
+            updateNotification(applicationContext, WorkerState.AWAITING_RETRY)
+            return Result.retry()
         }
     }
 
@@ -202,14 +228,30 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
     }
 
     companion object {
+        private const val MAX_ATTEMPTS = 5
+
         fun enqueue(context: Context) {
-            val cb = Constraints.Builder()
-            if (EnvironmentUtils.isWifiRequired())
-                cb.setRequiredNetworkType(NetworkType.UNMETERED)
-            val constraints = cb.build()
+            // Boot, the unlock receiver and the notification's retry action can all
+            // arrive together. REPLACE would cancel an ADB start that is already in
+            // flight and begin it from scratch, so leave a running worker alone.
+            if (isRunning(context)) {
+                Log.i(AppConstants.TAG, "Wireless boot start already running, skip enqueue")
+                return
+            }
+
+            // No known port means discovery is needed, and discovery needs a
+            // network the system will not meter.
+            val constraints = if (AdbWirelessHelper().getStartableAdbPort() == null) {
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.UNMETERED)
+                    .build()
+            } else {
+                Constraints.NONE
+            }
 
             val request = OneTimeWorkRequestBuilder<AdbStartWorker>()
                 .setConstraints(constraints)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.SECONDS)
                 .build()
 
             WorkManager.getInstance(context).enqueueUniqueWork(
@@ -218,6 +260,16 @@ class AdbStartWorker(context: Context, params: WorkerParameters) : CoroutineWork
                 request
             )
         }
+
+        private fun isRunning(context: Context): Boolean = try {
+            WorkManager.getInstance(context)
+                .getWorkInfosForUniqueWork("adb_start_worker")
+                .get(1, TimeUnit.SECONDS)
+                .any { it.state == WorkInfo.State.RUNNING }
+        } catch (_: Exception) {
+            false
+        }
+
         const val CHANNEL_ID = "AdbStartWorker"
         const val NOTIFICATION_ID = 1448
     }
