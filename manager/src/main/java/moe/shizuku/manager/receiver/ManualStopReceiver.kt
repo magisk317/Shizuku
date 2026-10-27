@@ -3,6 +3,8 @@ package moe.shizuku.manager.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
+import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
 import moe.shizuku.manager.utils.ShizukuStateMachine
@@ -16,5 +18,6 @@ class ManualStopReceiver : AuthenticatedReceiver() {
 
         ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
         runCatching { Shizuku.exit() }
+            .onFailure { Log.w(AppConstants.TAG, "Failed to stop Shizuku", it) }
     }
 }
