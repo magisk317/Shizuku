@@ -1,0 +1,34 @@
+plugins {
+    id("magisk.android.library")
+    id("dev.rikka.tools.refine")
+}
+
+val shizukuApplicationId: String = rootProject.extra["shizukuApplicationId"] as String
+
+android {
+    namespace = "moe.shizuku.server"
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    defaultConfig {
+        buildConfigField("String", "MANAGER_APPLICATION_ID", "\"$shizukuApplicationId\"")
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.annotation)
+    implementation(libs.gson)
+    api(libs.parcelablelist)
+
+    implementation(project(":aidl"))
+    implementation(project(":common"))
+    implementation(project(":shared"))
+    compileOnly(project(":provider"))
+    implementation(project(":starter"))
+    implementation(project(":rish"))
+    implementation(project(":server-shared"))
+    implementation(libs.hidden.compat)
+    compileOnly(libs.hidden.stub)
+}

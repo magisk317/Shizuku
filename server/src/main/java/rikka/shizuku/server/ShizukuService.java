@@ -632,4 +632,12 @@ public class ShizukuService extends Service<ShizukuUserServiceManager, ShizukuCl
     public boolean isHidden(int uid) throws RemoteException {
         return false;
     }
+
+    // Added by the pinned api submodule (IShizukuService transaction 107). The
+    // upstream line that introduced it keeps it a stub as well, so match that:
+    // no uid is reported hidden.
+    @Override
+    public int[] getHiddenUids() throws RemoteException {
+        return new int[0];
+    }
 }

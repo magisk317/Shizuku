@@ -1,0 +1,110 @@
+[versions]
+# --- Toolchain: aligned with the magisk3171 shared chain (magisk-build-logic catalog) ---
+agp = "9.5.0-rc01"
+kotlin = "2.5.0-Beta2"
+compileSdk = "37.2"
+minSdk = "24"
+targetSdk = "37"
+java = "27"
+javaBytecode = "27"
+buildTools = "37.0.0"
+cmake = "4.1.2"
+ndk = "30.0.16248370"
+
+# --- Release versioning ---
+versionName = "13.7.0"
+
+# --- Rikka build plugins ---
+refine = "4.4.0"
+hidden-api = "4.4.0"
+
+# --- Dependencies ---
+androidx-annotation = "1.11.0"
+androidx-core = "1.19.1"
+androidx-browser = "1.10.0"
+androidx-fragment-ktx = "1.8.7"
+androidx-lifecycle = "2.11.0"
+androidx-preference-ktx = "1.2.1"
+androidx-recyclerview = "1.4.0"
+androidx-work = "2.12.0"
+kotlinx-coroutines = "1.11.0"
+kotlinx-serialization-json = "1.12.0"
+apksig = "8.13.2"
+appiconloader = "1.5.0"
+arscblib = "1.3.8"
+boringssl = "20250114"
+bouncycastle-bcpkix = "1.80"
+gson = "2.13.1"
+hiddenapibypass = "6.1"
+libcxx = "27.0.12077973"
+libsu = "6.0.0"
+material = "1.14.0-alpha08"
+okhttp = "4.12.0"
+parcelablelist = "2.0.1"
+rikka-appcompat = "1.6.1"
+rikka-compatibility = "2.0.0"
+rikka-core = "1.4.1"
+rikka-html = "1.1.2"
+rikka-insets = "1.3.0"
+rikka-layoutinflater = "1.3.0"
+rikka-lifecycle-resource-livedata = "1.0.1"
+rikka-material = "2.7.2"
+rikka-material-preference = "2.0.0"
+rikka-preference-simplemenu = "1.0.3"
+rikka-recyclerview-adapter = "1.3.0"
+rikka-recyclerview-ktx = "1.3.2"
+
+[libraries]
+# androidx
+androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "androidx-annotation" }
+androidx-core = { group = "androidx.core", name = "core", version.ref = "androidx-core" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "androidx-browser" }
+androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "androidx-fragment-ktx" }
+androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "androidx-lifecycle" }
+androidx-preference-ktx = { group = "androidx.preference", name = "preference-ktx", version.ref = "androidx-preference-ktx" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "androidx-recyclerview" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "androidx-work" }
+
+# kotlinx
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
+
+# rikka
+hidden-compat = { group = "dev.rikka.hidden", name = "compat", version.ref = "hidden-api" }
+hidden-stub = { group = "dev.rikka.hidden", name = "stub", version.ref = "hidden-api" }
+refine-runtime = { group = "dev.rikka.tools.refine", name = "runtime", version.ref = "refine" }
+parcelablelist = { group = "dev.rikka.rikkax.parcelablelist", name = "parcelablelist", version.ref = "parcelablelist" }
+rikka-appcompat = { group = "dev.rikka.rikkax.appcompat", name = "appcompat", version.ref = "rikka-appcompat" }
+rikka-compatibility = { group = "dev.rikka.rikkax.compatibility", name = "compatibility", version.ref = "rikka-compatibility" }
+rikka-core-ktx = { group = "dev.rikka.rikkax.core", name = "core-ktx", version.ref = "rikka-core" }
+rikka-html-ktx = { group = "dev.rikka.rikkax.html", name = "html-ktx", version.ref = "rikka-html" }
+rikka-insets = { group = "dev.rikka.rikkax.insets", name = "insets", version.ref = "rikka-insets" }
+rikka-layoutinflater = { group = "dev.rikka.rikkax.layoutinflater", name = "layoutinflater", version.ref = "rikka-layoutinflater" }
+rikka-lifecycle-resource-livedata = { group = "dev.rikka.rikkax.lifecycle", name = "lifecycle-resource-livedata", version.ref = "rikka-lifecycle-resource-livedata" }
+rikka-material = { group = "dev.rikka.rikkax.material", name = "material", version.ref = "rikka-material" }
+rikka-material-preference = { group = "dev.rikka.rikkax.material", name = "material-preference", version.ref = "rikka-material-preference" }
+rikka-preference-simplemenu = { group = "dev.rikka.rikkax.preference", name = "simplemenu-preference", version.ref = "rikka-preference-simplemenu" }
+rikka-recyclerview-adapter = { group = "dev.rikka.rikkax.recyclerview", name = "recyclerview-adapter", version.ref = "rikka-recyclerview-adapter" }
+rikka-recyclerview-ktx = { group = "dev.rikka.rikkax.recyclerview", name = "recyclerview-ktx", version.ref = "rikka-recyclerview-ktx" }
+
+# third party
+apksig = { group = "com.android.tools.build", name = "apksig", version.ref = "apksig" }
+appiconloader = { group = "me.zhanghai.android.appiconloader", name = "appiconloader", version.ref = "appiconloader" }
+arscblib = { group = "io.github.reandroid", name = "ARSCLib", version.ref = "arscblib" }
+boringssl = { group = "io.github.vvb2060.ndk", name = "boringssl", version.ref = "boringssl" }
+bouncycastle-bcpkix = { group = "org.bouncycastle", name = "bcpkix-jdk18on", version.ref = "bouncycastle-bcpkix" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+hiddenapibypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenapibypass" }
+libcxx = { group = "org.lsposed.libcxx", name = "libcxx", version.ref = "libcxx" }
+libsu-core = { group = "com.github.topjohnwu.libsu", name = "core", version.ref = "libsu" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+refine = { id = "dev.rikka.tools.refine", version.ref = "refine" }
