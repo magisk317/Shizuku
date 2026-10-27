@@ -4,78 +4,74 @@ import android.Manifest
 import android.app.AppOpsManager
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.NotificationManager
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import com.google.android.material.appbar.AppBarLayout
 import moe.shizuku.manager.AppConstants
+import moe.shizuku.manager.R
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.app.AppBarActivity
-import moe.shizuku.manager.databinding.AdbPairingTutorialActivityBinding
+import moe.shizuku.manager.app.ShizukuTheme
+import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.utils.SettingsHelper
 import moe.shizuku.manager.utils.SettingsPage
-import rikka.compatibility.DeviceCompatibility
+import android.view.ViewGroup
 
 @RequiresApi(Build.VERSION_CODES.R)
 class AdbPairingTutorialActivity : AppBarActivity() {
 
-    private lateinit var binding: AdbPairingTutorialActivityBinding
-
-    private var notificationEnabled: Boolean = false
+    private var notificationEnabled by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val context = this
 
-        binding = AdbPairingTutorialActivityBinding.inflate(layoutInflater, rootView, true)
-        
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         notificationEnabled = isNotificationEnabled()
-
         if (notificationEnabled) {
             startPairingService()
         }
 
-        binding.apply {
-            syncNotificationEnabled()
+        // The content must carry the scrolling-view behaviour like every View-based
+        // child of the CoordinatorLayout root, or it renders from under the toolbar.
+        val params = CoordinatorLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
 
-            if (DeviceCompatibility.isMiui()) {
-                miui.isVisible = true
+        setContentView(ComposeView(this).apply {
+            setContent {
+                ShizukuTheme(
+                    nightMode = ShizukuSettings.getNightMode(),
+                    blackNightTheme = ThemeHelper.isBlackNightTheme(this@AdbPairingTutorialActivity),
+                    useSystemColor = ThemeHelper.isUsingSystemColor(),
+                ) {
+                    AdbPairingTutorialScreen(
+                        notificationEnabled = notificationEnabled,
+                        onDeveloperOptions = {
+                            SettingsHelper.launchOrHighlightWirelessDebugging(this@AdbPairingTutorialActivity)
+                        },
+                        onNotificationSettings = {
+                            SettingsPage.Notifications.NotificationSettings.launch(this@AdbPairingTutorialActivity)
+                        },
+                    )
+                }
             }
-
-            developerOptions.setOnClickListener {
-                SettingsHelper.launchOrHighlightWirelessDebugging(context)
-            }
-
-            notificationOptions.setOnClickListener {
-                SettingsPage.Notifications.NotificationSettings.launch(context)
-            }
-        }
-    }
-
-    private fun syncNotificationEnabled() {
-        binding.apply {
-            step1.isVisible = notificationEnabled
-            step2.isVisible = notificationEnabled
-            step3.isVisible = notificationEnabled
-            network.isVisible = notificationEnabled
-            notification.isVisible = notificationEnabled
-            notificationDisabled.isGone = notificationEnabled
-        }
+        }, params)
     }
 
     private fun isNotificationEnabled(): Boolean {
-        val context = this
-
-        val nm = context.getSystemService(NotificationManager::class.java)
+        val nm = getSystemService(NotificationManager::class.java)
         val channel = nm.getNotificationChannel(AdbPairingService.NOTIFICATION_CHANNEL)
         return nm.areNotificationsEnabled() &&
                 (channel == null || channel.importance != NotificationManager.IMPORTANCE_NONE)
@@ -87,7 +83,6 @@ class AdbPairingTutorialActivity : AppBarActivity() {
         val newNotificationEnabled = isNotificationEnabled()
         if (newNotificationEnabled != notificationEnabled) {
             notificationEnabled = newNotificationEnabled
-            syncNotificationEnabled()
 
             if (newNotificationEnabled) {
                 startPairingService()

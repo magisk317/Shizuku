@@ -3,21 +3,21 @@ package moe.shizuku.manager.shell
 import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
-import android.view.View
+import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.isVisible
-import kotlin.math.roundToInt
-import moe.shizuku.manager.Helps
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.compose.ui.platform.ComposeView
+import com.google.android.material.appbar.AppBarLayout
+import java.io.File
 import android.util.Log
 import moe.shizuku.manager.AppConstants
+import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.app.AppBarActivity
-import moe.shizuku.manager.databinding.TerminalTutorialActivityBinding
-import moe.shizuku.manager.ktx.toHtml
+import moe.shizuku.manager.app.ShizukuTheme
+import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.utils.CustomTabsHelper
-import rikka.compatibility.DeviceCompatibility
-import rikka.html.text.HtmlCompat
-import rikka.insets.*
 
 class ShellTutorialActivity : AppBarActivity() {
 
@@ -79,43 +79,30 @@ class ShellTutorialActivity : AppBarActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val binding = TerminalTutorialActivityBinding.inflate(layoutInflater, rootView, true)
-
-        binding.content.apply {
-            setInitialPadding(
-                initialPaddingLeft,
-                initialPaddingTop + (resources.displayMetrics.density * 8).roundToInt(),
-                initialPaddingRight,
-                initialPaddingBottom
-            )
-        }
-
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        binding.apply {
-            if (DeviceCompatibility.isMiui()) {
-                miui.isVisible = true
+        // The content must carry the scrolling-view behaviour like every View-based
+        // child of the CoordinatorLayout root, or it renders from under the toolbar.
+        val params = CoordinatorLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
+
+        setContentView(ComposeView(this).apply {
+            setContent {
+                ShizukuTheme(
+                    nightMode = ShizukuSettings.getNightMode(),
+                    blackNightTheme = ThemeHelper.isBlackNightTheme(this@ShellTutorialActivity),
+                    useSystemColor = ThemeHelper.isUsingSystemColor(),
+                ) {
+                    ShellTutorialScreen(
+                        onExportFiles = { openDocumentsTree.launch(null) },
+                        onOpenRishDocs = {
+                            CustomTabsHelper.launchUrlOrCopy(this@ShellTutorialActivity, Helps.RISH.get())
+                        },
+                    )
+                }
             }
-
-            val shName = "<font face=\"monospace\">$SH_NAME</font>"
-            val dexName = "<font face=\"monospace\">$DEX_NAME</font>"
-
-            summary.text = getString(R.string.rish_description, shName)
-                .toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE)
-
-            text1.text = getString(R.string.terminal_tutorial_1)
-            summary1.text = getString(R.string.terminal_tutorial_1_description, shName, dexName)
-                .toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE)
-
-            text2.text = getString(R.string.terminal_tutorial_2, shName).toHtml()
-            command2.text = "cp /sdcard/chosen-folder/* /data/data/terminal.package.name/files"
-            summary2.text = getString(R.string.terminal_tutorial_2_description, shName, shName, ".bashrc").toHtml()
-
-            text3.text = getString(R.string.terminal_tutorial_3)
-            command3.text = "sh /path/to/$SH_NAME"
-
-            button1.setOnClickListener { openDocumentsTree.launch(null) }
-            button2.setOnClickListener { v: View -> CustomTabsHelper.launchUrlOrCopy(v.context, Helps.RISH.get()) }
-        }
+        }, params)
     }
 }

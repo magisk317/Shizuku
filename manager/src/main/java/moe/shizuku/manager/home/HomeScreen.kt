@@ -1,10 +1,6 @@
 package moe.shizuku.manager.home
 
-import android.graphics.Typeface
 import android.os.Build
-import android.text.Spanned
-import android.text.style.StyleSpan
-import android.text.style.URLSpan
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,17 +32,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.text.getSpans
 import rikka.html.text.HtmlCompat
 import io.github.magisk317.uikit.surface.AppCard
 import io.github.magisk317.uikit.surface.AppListItem
 import io.github.magisk317.uikit.surface.MiuixStatusCheckCard
 import moe.shizuku.manager.R
+import moe.shizuku.manager.ktx.rememberHtmlText
 import moe.shizuku.manager.model.ServiceStatus
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.UserHandleCompat
@@ -380,39 +373,4 @@ private fun CardButton(textRes: Int, iconRes: Int, onClick: () -> Unit) {
     }
 }
 
-/**
- * The View cards rendered these strings through HtmlCompat so <a href> spans
- * became clickable links. LinkAnnotation gives Compose the same result, with
- * the URL format argument already substituted by the resource lookup.
- */
-@Composable
-private fun rememberHtmlText(res: Int, vararg formatArgs: String): AnnotatedString {
-    val linkColor = MaterialTheme.colorScheme.primary
-    val raw = stringResource(res, *formatArgs)
-    return remember(raw, linkColor) { raw.toHtmlAnnotated(linkColor) }
-}
 
-private fun String.toHtmlAnnotated(linkColor: Color): AnnotatedString {
-    val spanned = HtmlCompat.fromHtml(this, HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE) as Spanned
-    val builder = AnnotatedString.Builder(spanned.toString())
-    spanned.getSpans<URLSpan>(0, spanned.length).forEach { span ->
-        builder.addLink(
-            LinkAnnotation.Url(
-                span.url,
-                TextLinkStyles(style = SpanStyle(color = linkColor)),
-            ),
-            spanned.getSpanStart(span),
-            spanned.getSpanEnd(span),
-        )
-    }
-    spanned.getSpans<StyleSpan>(0, spanned.length)
-        .filter { it.style == Typeface.BOLD }
-        .forEach { span ->
-            builder.addStyle(
-                SpanStyle(fontWeight = FontWeight.Bold),
-                spanned.getSpanStart(span),
-                spanned.getSpanEnd(span),
-            )
-        }
-    return builder.toAnnotatedString()
-}

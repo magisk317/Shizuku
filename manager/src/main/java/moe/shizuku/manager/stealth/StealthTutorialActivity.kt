@@ -187,8 +187,8 @@ class StealthTutorialActivity : AppBarActivity() {
                 }
                 MaterialAlertDialogBuilder(this@StealthTutorialActivity)
                     .setTitle("${getString(android.R.string.cancel)}?")
-                    .setPositiveButton("Yes") { _, _ -> finish() }
-                    .setNegativeButton("No", null)
+                    .setPositiveButton(android.R.string.yes) { _, _ -> finish() }
+                    .setNegativeButton(android.R.string.no, null)
                     .show()
             }
         }
