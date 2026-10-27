@@ -18,6 +18,8 @@ import moe.shizuku.manager.utils.SettingsPage
 fun Context.showAccessibilityDialog() {
     val hasWriteSecureSettings = (checkSelfPermission(WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED)
 
+    // PackageManager.getInstallSourceInfo is API 30; minSdk is 24.
+    @Suppress("DEPRECATION")
     val installer = packageManager.getInstallerPackageName(packageName)
     val isInstalledByPlayOrAdb = (installer == "com.android.vending") || (installer == null)
     val hasAccessRestrictedSettings = isInstalledByPlayOrAdb || Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE

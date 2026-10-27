@@ -16,6 +16,8 @@ import rikka.shizuku.Shizuku
 
 class ShizukuApplication : Application() {
 
+    // libsu 6.0.0 deprecates FLAG_REDIRECT_STDERR but ships no replacement for it.
+    @Suppress("DEPRECATION")
     companion object {
 
         init {

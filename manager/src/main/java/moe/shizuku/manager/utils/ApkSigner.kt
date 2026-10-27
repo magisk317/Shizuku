@@ -37,6 +37,9 @@ object ApkSigner {
 
         ApkSigner.Builder(
             listOf(
+                // apksig only ships the certificate-taking constructor; it is
+                // deprecated in favour of one that does not exist in 8.13.2.
+                @Suppress("DEPRECATION")
                 ApkSigner.SignerConfig.Builder(
                     "ShizukuSigner",
                     key.privateKey,

@@ -24,6 +24,8 @@ import androidx.core.widget.addTextChangedListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import java.io.File
+import android.util.Log
+import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.databinding.StealthTutorialActivityBinding
@@ -61,7 +63,8 @@ class StealthTutorialActivity : AppBarActivity() {
                         fab.setOnClickListener { onClick(action) }
                     }
 
-                    is UiState.Loading -> null
+                    is UiState.Loading -> Unit
+                    null -> Unit
 
                     is UiState.Pending -> {
                         try {
@@ -141,7 +144,7 @@ class StealthTutorialActivity : AppBarActivity() {
     override fun onDestroy() {
         runCatching {
             unregisterReceiver(installerReceiver)
-        }
+        }.onFailure { Log.w(AppConstants.TAG, "Failed to unregister the install receiver", it) }
         super.onDestroy()
     }
 
@@ -263,6 +266,8 @@ class StealthTutorialActivity : AppBarActivity() {
         return true
     }
 
+    // Window.navigationBarColor is deprecated with no replacement below API 35.
+    @Suppress("DEPRECATION")
     private fun makeNavBarTransparent() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             window.navigationBarColor = Color.TRANSPARENT

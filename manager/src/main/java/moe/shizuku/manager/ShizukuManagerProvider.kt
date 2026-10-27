@@ -1,7 +1,6 @@
 package moe.shizuku.manager
 
 import android.os.Bundle
-import androidx.core.os.bundleOf
 import kotlinx.coroutines.android.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -37,6 +36,8 @@ class ShizukuManagerProvider : ShizukuProvider() {
                 extras.classLoader = BinderContainer::class.java.classLoader
 
                 val token = extras.getString(USER_SERVICE_ARG_TOKEN) ?: return null
+                // Typed getParcelable is API 33; minSdk is 24.
+                @Suppress("DEPRECATION")
                 val binder = extras.getParcelable<BinderContainer>(EXTRA_BINDER)?.binder ?: return null
 
                 return runBlocking {
@@ -46,8 +47,11 @@ class ShizukuManagerProvider : ShizukuProvider() {
                             withContext(workerHandler.asCoroutineDispatcher()) {
                                 try {
                                     val reply = Bundle()
-                                    Shizuku.attachUserService(binder, bundleOf(USER_SERVICE_ARG_TOKEN to token))
-                                    reply!!.putParcelable(EXTRA_BINDER, BinderContainer(Shizuku.getBinder()))
+                                    Shizuku.attachUserService(
+                                        binder,
+                                        Bundle().apply { putString(USER_SERVICE_ARG_TOKEN, token) },
+                                    )
+                                    reply.putParcelable(EXTRA_BINDER, BinderContainer(Shizuku.getBinder()))
                                     reply
                                 } catch (e: Throwable) {
                                     LOGGER.e(e, "attachUserService $token")

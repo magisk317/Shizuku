@@ -45,6 +45,8 @@ object ApkChangedObservers {
     }
 }
 
+// FileObserver(File, ...) only exists from API 29 and this module keeps minSdk 24.
+@Suppress("DEPRECATION")
 class ApkChangedObserver(private val path: String) : FileObserver(path, DELETE) {
 
     private val listeners = mutableSetOf<ApkChangedListener>()

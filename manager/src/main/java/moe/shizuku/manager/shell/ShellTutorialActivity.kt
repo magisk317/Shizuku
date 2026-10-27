@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import kotlin.math.roundToInt
 import moe.shizuku.manager.Helps
+import android.util.Log
+import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.databinding.TerminalTutorialActivityBinding
@@ -51,8 +53,10 @@ class ShellTutorialActivity : AppBarActivity() {
             }
 
             fun writeToDocument(name: String) {
-                DocumentsContract.createDocument(contentResolver, doc, "application/octet-stream", name)?.runCatching {
-                    cr.openOutputStream(this)?.let { output ->
+                val uri = DocumentsContract.createDocument(contentResolver, doc, "application/octet-stream", name)
+                    ?: return
+                runCatching {
+                    cr.openOutputStream(uri)?.let { output ->
                         assets.open(name).use { input ->
                             if (name == SH_NAME) {
                                 input.bufferedReader().use {
@@ -65,7 +69,7 @@ class ShellTutorialActivity : AppBarActivity() {
                             }
                         }
                     }
-                }
+                }.onFailure { Log.w(AppConstants.TAG, "Failed to write $name to the picked document", it) }
             }
 
             writeToDocument(SH_NAME)

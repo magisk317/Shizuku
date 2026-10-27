@@ -48,6 +48,8 @@ class AdbMdns(
         registered = false
     }
 
+    // The executor-based resolveService is API 34; minSdk is 24.
+    @Suppress("DEPRECATION")
     private fun onServiceFound(info: NsdServiceInfo) {
         nsdManager.resolveService(info, ResolveListener(this))
     }
@@ -57,6 +59,8 @@ class AdbMdns(
     }
 
     private fun onServiceResolved(resolvedService: NsdServiceInfo) {
+        // NsdServiceInfo.getHostAddresses() is API 34; minSdk is 24.
+        @Suppress("DEPRECATION")
         val host = resolvedService.host?.hostAddress ?: return
         if (running && NetworkInterface.getNetworkInterfaces()
                 .asSequence()

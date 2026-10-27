@@ -22,6 +22,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -107,6 +108,9 @@ class AdbPairDialogFragment : DialogFragment() {
         }
     }
 
+    // This fragment builds its dialog in onCreateDialog, so onViewCreated never
+    // runs and onActivityCreated stays the correct hook.
+    @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
@@ -176,6 +180,8 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
         adbMdns.start()
     }
 
+    // GlobalScope is deliberate here: the pairing work must outlive the dialog.
+    @OptIn(DelicateCoroutinesApi::class)
     fun run(port: Int, password: String) {
         GlobalScope.launch(Dispatchers.IO) {
             val host = resolvedHost

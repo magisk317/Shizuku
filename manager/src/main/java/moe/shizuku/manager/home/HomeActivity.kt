@@ -17,6 +17,8 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
+import android.util.Log
+import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.adb.AdbPairingService
@@ -239,6 +241,7 @@ abstract class HomeActivity : AppBarActivity() {
                         .setPositiveButton(android.R.string.ok) { _: DialogInterface?, _: Int ->
                             ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
                             runCatching { Shizuku.exit() }
+                                .onFailure { Log.w(AppConstants.TAG, "Failed to stop Shizuku", it) }
                         }
                         .setNegativeButton(android.R.string.cancel, null)
                         .show()

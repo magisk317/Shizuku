@@ -192,6 +192,8 @@ val installerReceiver =
 
             when (status) {
                 PackageInstaller.STATUS_PENDING_USER_ACTION -> {
+                    // Typed getParcelableExtra is API 33; minSdk is 24.
+                    @Suppress("DEPRECATION")
                     val confirmationIntent = intent.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)
                     if (confirmationIntent != null) {
                         context.startActivity(confirmationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

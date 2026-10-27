@@ -89,6 +89,8 @@ class RequestPermissionActivity : AppActivity() {
         val uid = intent.getIntExtra("uid", -1)
         val pid = intent.getIntExtra("pid", -1)
         val requestCode = intent.getIntExtra("requestCode", -1)
+        // Typed getParcelableExtra is API 33; minSdk is 24.
+        @Suppress("DEPRECATION")
         val ai = intent.getParcelableExtra<ApplicationInfo>("applicationInfo")
         if (uid == -1 || pid == -1 || ai == null) {
             finish()

@@ -105,7 +105,7 @@ object UpdateHelper {
 
     suspend fun isUpdateAvailable(): Boolean {
         try {
-            val latest = fetchLatestRelease().version ?: return false
+            val latest = fetchLatestRelease().version
             val current = Version.parse(getVersionName()) ?: return false
             return latest > current
         } catch (e: Exception) {
@@ -131,8 +131,11 @@ object UpdateHelper {
                 Toast.LENGTH_SHORT,
             ).show()
 
-        val apk =
-            latestRelease.download()?.run {
+        // download() answers a File and throws on failure, so the "apk == null" branch the
+        // fork carried here could never run: a failed download surfaced as an uncaught
+        // exception in the caller's coroutine instead of the toast below.
+        val apk = try {
+            latestRelease.download().run {
                 val pm = appContext.packageManager
                 val apkPackageName = pm.getPackageArchiveInfo(
                     this.path, 0
@@ -154,7 +157,7 @@ object UpdateHelper {
                     this
                 }
             }
-        if (apk == null) {
+        } catch (e: Throwable) {
             Toast
                 .makeText(
                     appContext,
