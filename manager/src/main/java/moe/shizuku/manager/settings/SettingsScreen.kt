@@ -8,7 +8,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -26,19 +28,28 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.google.android.material.snackbar.Snackbar
+import io.github.magisk317.uikit.common.AppSnackbarDuration
+import io.github.magisk317.uikit.common.AppSnackbarHost
+import io.github.magisk317.uikit.common.AppSnackbarHostState
+import io.github.magisk317.uikit.common.AppSnackbarResult
+import io.github.magisk317.uikit.common.showLatestSnackbar
 import io.github.magisk317.uikit.preference.AppArrowItem
 import io.github.magisk317.uikit.preference.SectionCard
 import io.github.magisk317.uikit.preference.SettingsChoiceRow
 import io.github.magisk317.uikit.preference.StateSwitchItem
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.surface.AppTextField
+import io.github.magisk317.uikit.text.AppText
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings.Keys.KEY_TCP_MODE
 import moe.shizuku.manager.adb.AdbStarter
-import moe.shizuku.manager.app.SnackbarHelper
 import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.ktx.toHtml
 import moe.shizuku.manager.receiver.NotifCancelReceiver
@@ -50,11 +61,6 @@ import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.core.util.ResourceUtils
 import rikka.material.app.LocaleDelegate
 import rikka.shizuku.manager.ShizukuLocales
-import io.github.magisk317.uikit.surface.AppAlertDialog
-import io.github.magisk317.uikit.surface.AppTextButton
-import io.github.magisk317.uikit.surface.AppTextField
-import io.github.magisk317.uikit.text.AppText
-import androidx.compose.foundation.layout.Row
 
 /**
  * Compose replacement for SettingsFragment.
@@ -97,6 +103,7 @@ fun SettingsScreen(
     var tcpPortDraft by remember { mutableStateOf("") }
     var pendingTcpPort by remember { mutableStateOf<Int?>(null) }
 
+    val snackbarHostState = remember { AppSnackbarHostState() }
     val batteryContinuation = remember { AtomicReference<CancellableContinuation<Boolean>?>(null) }
 
     val batteryLauncher = rememberLauncherForActivityResult(
@@ -119,23 +126,19 @@ fun SettingsScreen(
         if (!newValue || SettingsHelper.isIgnoringBatteryOptimizations(context) || isTelevision) {
             return true
         }
-        val view = activity?.window?.decorView ?: return true
-        return suspendCancellableCoroutine { continuation ->
-            batteryContinuation.set(continuation)
-            SnackbarHelper.show(
-                context,
-                view,
-                msg = context.getString(R.string.snackbar_battery_optimization_settings),
-                duration = 6000,
-                actionText = context.getString(R.string.snackbar_action_fix),
-                action = { SettingsHelper.requestIgnoreBatteryOptimizations(context, batteryLauncher) },
-                onDismiss = { event ->
-                    if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
-                        batteryContinuation.getAndSet(null)?.resumeIfActive(false)
-                    }
-                },
+        val outcome = CompletableDeferred<Boolean>()
+        scope.launch {
+            val result = snackbarHostState.showLatestSnackbar(
+                message = context.getString(R.string.snackbar_battery_optimization_settings),
+                actionLabel = context.getString(R.string.snackbar_action_fix),
+                duration = AppSnackbarDuration.Indefinite,
             )
+            if (result == AppSnackbarResult.ActionPerformed) {
+                SettingsHelper.requestIgnoreBatteryOptimizations(context, batteryLauncher)
+            }
+            outcome.complete(result == AppSnackbarResult.ActionPerformed)
         }
+        return outcome.await()
     }
 
     Column(
@@ -470,8 +473,10 @@ fun SettingsScreen(
                         showTcpPortDialog = false
                         val port = tcpPortDraft.toIntOrNull()
                         when {
-                            port != null && port !in 1..65535 -> activity?.window?.decorView?.let {
-                                SnackbarHelper.show(context, it, context.getString(R.string.snackbar_invalid_port))
+                            port != null && port !in 1..65535 -> scope.launch {
+                                snackbarHostState.showLatestSnackbar(
+                                    context.getString(R.string.snackbar_invalid_port),
+                                )
                             }
                             ShizukuStateMachine.isRunning() && repository.needsTcpPortRestart(port ?: 5555) -> {
                                 pendingTcpPort = port

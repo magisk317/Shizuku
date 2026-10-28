@@ -39,9 +39,13 @@ import androidx.lifecycle.asFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import io.github.magisk317.uikit.common.AppSnackbarDuration
+import io.github.magisk317.uikit.common.AppSnackbarHost
+import io.github.magisk317.uikit.common.AppSnackbarHostState
+import io.github.magisk317.uikit.common.AppSnackbarResult
+import io.github.magisk317.uikit.common.showLatestSnackbar
 import io.github.magisk317.uikit.surface.AppAlertDialog
 import io.github.magisk317.uikit.surface.AppBottomSheet
 import io.github.magisk317.uikit.surface.AppTextButton
@@ -62,7 +66,6 @@ import moe.shizuku.manager.adb.AdbPairingTutorialActivity
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.app.ShizukuTheme
-import moe.shizuku.manager.app.SnackbarHelper
 import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.ktx.rememberHtmlText
 import moe.shizuku.manager.ktx.toHtml
@@ -101,6 +104,9 @@ abstract class HomeActivity : AppBarActivity() {
     private var adbCommandDialog by mutableStateOf(false)
     private var automationSheet by mutableStateOf(false)
     private var exitDialog by mutableStateOf<Pair<String, String>?>(null)
+    private var batterySnackbar by mutableStateOf(false)
+    private var updateSnackbar by mutableStateOf(false)
+    private val snackbarHostState = AppSnackbarHostState()
 
     private val stateListener: (ShizukuStateMachine.State) -> Unit = {
         if (ShizukuStateMachine.isRunning()) {
@@ -335,6 +341,35 @@ abstract class HomeActivity : AppBarActivity() {
                     )
                 }
 
+                AppSnackbarHost(hostState = snackbarHostState)
+
+                LaunchedEffect(batterySnackbar) {
+                    if (!batterySnackbar) return@LaunchedEffect
+                    val result = snackbarHostState.showLatestSnackbar(
+                        message = getString(R.string.snackbar_battery_optimization_home),
+                        actionLabel = getString(R.string.snackbar_action_fix),
+                        duration = AppSnackbarDuration.Indefinite,
+                    )
+                    if (result == AppSnackbarResult.ActionPerformed) {
+                        SettingsHelper.requestIgnoreBatteryOptimizations(this@HomeActivity, null)
+                    }
+                    batterySnackbar = false
+                }
+
+                LaunchedEffect(updateSnackbar) {
+                    if (!updateSnackbar) return@LaunchedEffect
+                    val result = snackbarHostState.showLatestSnackbar(
+                        message = getString(R.string.snackbar_update_available),
+                        actionLabel = getString(R.string.snackbar_action_update),
+                        duration = AppSnackbarDuration.Indefinite,
+                    )
+                    if (result == AppSnackbarResult.ActionPerformed) {
+                        lifecycleScope.launch { UpdateHelper.update() }
+                    }
+                    UpdateHelper.updateLastPromptedVersion()
+                    updateSnackbar = false
+                }
+
                 if (adbDiscovery) {
                     AdbDiscoveryDialog(onDismiss = { adbDiscovery = false })
                 }
@@ -376,32 +411,13 @@ abstract class HomeActivity : AppBarActivity() {
         }
 
         homeModel.shouldShowBatteryOptimizationSnackbar.observe(this) { shouldShow ->
-            if (shouldShow) SnackbarHelper.show(
-                this,
-                window.decorView,
-                msg = getString(R.string.snackbar_battery_optimization_home),
-                duration = Snackbar.LENGTH_INDEFINITE,
-                actionText = getString(R.string.snackbar_action_fix),
-                action = { SettingsHelper.requestIgnoreBatteryOptimizations(this, null) }
-            )
+            if (shouldShow) batterySnackbar = true
         }
         homeModel.checkBatteryOptimization()
 
         lifecycleScope.launch {
             if (UpdateHelper.isCheckForUpdatesEnabled() && UpdateHelper.isNewUpdateAvailable()) {
-                SnackbarHelper.show(
-                    this@HomeActivity,
-                    window.decorView,
-                    msg = getString(R.string.snackbar_update_available),
-                    duration = Snackbar.LENGTH_INDEFINITE,
-                    actionText = getString(R.string.snackbar_action_update),
-                    action = {
-                        lifecycleScope.launch {
-                            UpdateHelper.update()
-                        }
-                    }
-                )
-                UpdateHelper.updateLastPromptedVersion()
+                updateSnackbar = true
             }
         }
 
@@ -430,7 +446,6 @@ abstract class HomeActivity : AppBarActivity() {
 
     override fun onPause() {
         super.onPause()
-        SnackbarHelper.dismiss()
     }
 
     private fun showExitDialog(title: String, message: String) {

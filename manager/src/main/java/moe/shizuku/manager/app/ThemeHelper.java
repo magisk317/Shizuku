@@ -46,12 +46,6 @@ public class ThemeHelper {
         }
     }
 
-    public static void applySnackbarTheme(Context context, Snackbar snackbar) {
-        snackbar.setBackgroundTint(resolveColor(context, R.attr.colorPrimaryContainer))
-            .setTextColor(resolveColor(context, R.attr.colorOnSurface))
-            .setActionTextColor(resolveColor(context, R.attr.colorPrimary));
-    }
-
     private static int resolveColor(Context context, int color) {
         TypedValue typedValue = new TypedValue();
         context.getTheme().resolveAttribute(color, typedValue, true);
