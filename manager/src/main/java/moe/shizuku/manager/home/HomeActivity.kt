@@ -44,8 +44,6 @@ import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.app.SnackbarHelper
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
-import moe.shizuku.manager.databinding.AboutDialogBinding
-import moe.shizuku.manager.databinding.HomeAutomationBottomSheetBinding
 import moe.shizuku.manager.ktx.toHtml
 import moe.shizuku.manager.management.ApplicationManagementActivity
 import moe.shizuku.manager.management.AppsViewModel
@@ -321,71 +319,17 @@ abstract class HomeActivity : AppBarActivity() {
     }
 
     private fun showAutomationSheet() {
-        val authToken = ShizukuSettings.getAuthToken()
-
-        val sheetBinding = HomeAutomationBottomSheetBinding.inflate(layoutInflater)
-
-        sheetBinding.apply {
-            val action = getIntentAction(buttonGroup.checkedButtonId)
-            val fields = listOf(
-                Field(actionLayout, actionEditText, action),
-                Field(packageLayout, packageEditText, packageName),
-                Field(targetLayout, targetEditText, "Broadcast Receiver"),
-                Field(extrasLayout, extrasEditText, authToken)
-            )
-
-            fields.forEach { (layout, input, initText) ->
-                input.setText(initText)
-                input.setKeyListener(null)
-
-                layout.setEndIconOnClickListener { v ->
-                    val context = v.context
-                    if (
-                        ClipboardUtils.put(context, input.text) &&
-                        android.os.Build.VERSION.SDK_INT <= android.os.Build.VERSION_CODES.S_V2
-                    ) {
-                        Toast.makeText(context, context.getString(R.string.toast_copied_to_clipboard), Toast.LENGTH_SHORT).show()
-                    }
-                }
+        val dialog = BottomSheetDialog(this)
+        dialog.setContentView(ComposeView(this).apply {
+            setContent {
+                AutomationSheetContent(
+                    packageName = packageName,
+                    onDismiss = { dialog.dismiss() },
+                )
             }
-
-            buttonGroup.addOnButtonCheckedListener { _, buttonId, isChecked ->
-                if (isChecked) {
-                    val action = getIntentAction(buttonId)
-                    actionEditText.setText(action)
-                }
-            }
-            extrasLayout.setStartIconOnClickListener {
-                MaterialAlertDialogBuilder(this@HomeActivity)
-                    .setTitle(R.string.home_automation_regenerate_token)
-                    .setMessage(R.string.home_automation_regenerate_token_message)
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .setPositiveButton(android.R.string.ok) { _, _ ->
-                        val authToken = ShizukuSettings.generateAuthToken()
-                        extrasEditText.setText(authToken)
-                    }
-                    .show()
-            }
-        }
-
-        BottomSheetDialog(this).apply {
-            setContentView(sheetBinding.root)
-            show()
-        }
+        })
+        dialog.show()
     }
-
-    private fun getIntentAction(buttonId: Int): String =
-        when (buttonId) {
-            R.id.buttonStart -> "${BuildConfig.APPLICATION_ID}.START"
-            R.id.buttonStop -> "${BuildConfig.APPLICATION_ID}.STOP"
-            else -> ""
-        }
-
-    private data class Field(
-        val layout: TextInputLayout,
-        val input: TextInputEditText,
-        val initText: String
-    )
 
     override fun onDestroy() {
         ShizukuStateMachine.removeListener(stateListener)
@@ -400,37 +344,32 @@ abstract class HomeActivity : AppBarActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_about -> {
-                val binding = AboutDialogBinding.inflate(LayoutInflater.from(this), null, false)
-                binding.sourceCode.movementMethod = LinkMovementMethod.getInstance()
-                binding.sourceCode.text = getString(
-                    R.string.about_view_source_code,
-                    "<b><a href=\"https://github.com/magisk317/Shizuku\">GitHub</a></b>"
-                ).toHtml()
-                binding.icon.setImageBitmap(
-                    AppIconCache.getOrLoadBitmap(
-                        this,
-                        applicationInfo,
-                        Process.myUid() / 100000,
-                        resources.getDimensionPixelOffset(R.dimen.default_app_icon_size)
-                    )
+                val icon = AppIconCache.getOrLoadBitmap(
+                    this,
+                    applicationInfo,
+                    Process.myUid() / 100000,
+                    resources.getDimensionPixelOffset(R.dimen.default_app_icon_size)
                 )
-                binding.versionName.text = packageManager.getPackageInfo(packageName, 0).versionName
+                val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: ""
 
-                binding.btnUpdate.setOnClickListener {
-                    lifecycleScope.launch {
-                        UpdateHelper.checkAndInstallUpdates()
+                lateinit var dialog: android.app.Dialog
+                val content = ComposeView(this).apply {
+                    setContent {
+                        AboutDialogContent(
+                            icon = icon,
+                            versionName = versionName,
+                            onClose = { dialog.dismiss() },
+                            onUpdate = {
+                                lifecycleScope.launch {
+                                    UpdateHelper.checkAndInstallUpdates()
+                                }
+                            },
+                        )
                     }
                 }
-
-                val dialog = MaterialAlertDialogBuilder(this)
-                    .setView(binding.root)
+                dialog = MaterialAlertDialogBuilder(this)
+                    .setView(content)
                     .create()
-
-                binding.btnClose.setOnClickListener {
-                    dialog.dismiss()
-                }
-                binding.btnDonate.visibility = android.view.View.GONE
-
                 dialog.show()
                 true
             }
