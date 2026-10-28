@@ -141,7 +141,6 @@ abstract class HomeActivity : ComponentActivity() {
             ) {
             AppPageScaffold(
                 title = this@HomeActivity.activityTitle(),
-                onBack = { this@HomeActivity.finish() },
                 snackbarHost = { AppSnackbarHost(hostState = snackbarHostState) },
                 actions = {
                     AppIconButton(
