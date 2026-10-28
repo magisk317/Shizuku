@@ -241,7 +241,10 @@ def main():
                 elif track == "shared" and kind == "MIUIX":
                     findings.append(("shared uses miuix native", rel, line, name))
         if track == "shared":
-            for match in re.finditer(r"MaterialTheme\.(colorScheme|typography|shapes)\.", source):
+            # `\.` instead of `\b` would only see `colorScheme.primary` and let
+            # `val scheme = MaterialTheme.colorScheme` through, which hands the
+            # whole M3 scheme to the file and defeats the split.
+            for match in re.finditer(r"MaterialTheme\.(colorScheme|typography|shapes)\b", source):
                 line = source[:match.start()].count("\n") + 1
                 findings.append(("shared uses M3 theme API (%s)" % match.group(1), rel, line, match.group(0)))
     if not args.quiet:
