@@ -3,7 +3,6 @@ package moe.shizuku.manager.home
 import android.Manifest.permission.WRITE_SECURE_SETTINGS
 import android.app.NotificationManager
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -17,33 +16,55 @@ import android.view.MenuItem
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import rikka.html.text.HtmlCompat
-import androidx.lifecycle.lifecycleScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppBottomSheet
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.surface.ConfirmActionDialog
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.adb.AdbMdns
 import moe.shizuku.manager.adb.AdbPairingService
 import moe.shizuku.manager.adb.AdbPairingTutorialActivity
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.app.AppBarActivity
-import moe.shizuku.manager.app.SnackbarHelper
 import moe.shizuku.manager.app.ShizukuTheme
+import moe.shizuku.manager.app.SnackbarHelper
 import moe.shizuku.manager.app.ThemeHelper
+import moe.shizuku.manager.ktx.rememberHtmlText
 import moe.shizuku.manager.ktx.toHtml
 import moe.shizuku.manager.management.ApplicationManagementActivity
 import moe.shizuku.manager.management.AppsViewModel
@@ -57,10 +78,12 @@ import moe.shizuku.manager.utils.AppIconCache
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.SettingsHelper
+import moe.shizuku.manager.utils.SettingsPage
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import moe.shizuku.manager.utils.UpdateHelper
 import rikka.core.content.asActivity
 import rikka.core.util.ClipboardUtils
+import rikka.html.text.HtmlCompat
 import rikka.lifecycle.Status
 import rikka.shizuku.Shizuku
 
@@ -68,6 +91,16 @@ abstract class HomeActivity : AppBarActivity() {
 
     private val homeModel: HomeViewModel by viewModels()
     private val appsModel: AppsViewModel by viewModels()
+
+    private var wadbEnableUsbDebugging by mutableStateOf(false)
+    private var wadbNotEnabled by mutableStateOf(false)
+    private var adbDiscovery by mutableStateOf(false)
+    private var discoveredPort by mutableIntStateOf(0)
+    private var aboutDialog by mutableStateOf(false)
+    private var stopConfirm by mutableStateOf(false)
+    private var adbCommandDialog by mutableStateOf(false)
+    private var automationSheet by mutableStateOf(false)
+    private var exitDialog by mutableStateOf<Pair<String, String>?>(null)
 
     private val stateListener: (ShizukuStateMachine.State) -> Unit = {
         if (ShizukuStateMachine.isRunning()) {
@@ -135,6 +168,188 @@ abstract class HomeActivity : AppBarActivity() {
                             CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_PERMISSION.get())
                         },
                     )
+
+                if (aboutDialog) {
+                    val icon = AppIconCache.getOrLoadBitmap(
+                        this@HomeActivity,
+                        applicationInfo,
+                        Process.myUid() / 100000,
+                        resources.getDimensionPixelOffset(R.dimen.default_app_icon_size),
+                    )
+                    val versionName = packageManager
+                        .getPackageInfo(packageName, 0).versionName ?: ""
+                    AppAlertDialog(
+                        onDismissRequest = { aboutDialog = false },
+                        text = {
+                            AboutDialogContent(
+                                icon = icon,
+                                versionName = versionName,
+                                onClose = { aboutDialog = false },
+                                onUpdate = {
+                                    lifecycleScope.launch {
+                                        UpdateHelper.checkAndInstallUpdates()
+                                    }
+                                },
+                            )
+                        },
+                    )
+                }
+
+                if (stopConfirm) {
+                    AppAlertDialog(
+                        onDismissRequest = { stopConfirm = false },
+                        text = { AppText(stringResource(R.string.dialog_stop_message)) },
+                        confirmButton = {
+                            AppTextButton(
+                                text = stringResource(android.R.string.ok),
+                                onClick = {
+                                    stopConfirm = false
+                                    ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
+                                    runCatching { Shizuku.exit() }
+                                        .onFailure { Log.w(AppConstants.TAG, "Failed to stop Shizuku", it) }
+                                },
+                            )
+                        },
+                        dismissButton = {
+                            AppTextButton(
+                                text = stringResource(android.R.string.cancel),
+                                onClick = { stopConfirm = false },
+                            )
+                        },
+                    )
+                }
+
+                if (adbCommandDialog) {
+                    val message = rememberHtmlText(
+                        R.string.home_adb_dialog_view_command_message,
+                        Starter.adbCommand,
+                    )
+                    AppAlertDialog(
+                        onDismissRequest = { adbCommandDialog = false },
+                        title = { AppText(stringResource(R.string.home_adb_button_view_command)) },
+                        text = { AppText(message) },
+                        confirmButton = {
+                            AppTextButton(
+                                text = stringResource(R.string.home_adb_dialog_view_command_copy_button),
+                                onClick = {
+                                    adbCommandDialog = false
+                                    if (ClipboardUtils.put(this@HomeActivity, Starter.adbCommand)) {
+                                        Toast.makeText(
+                                            this@HomeActivity,
+                                            getString(R.string.toast_copied_to_clipboard),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    }
+                                },
+                            )
+                        },
+                        dismissButton = {
+                            AppTextButton(
+                                text = stringResource(R.string.home_adb_dialog_view_command_button_send),
+                                onClick = {
+                                    adbCommandDialog = false
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, Starter.adbCommand)
+                                    }
+                                    startActivity(
+                                        Intent.createChooser(
+                                            intent,
+                                            getString(R.string.home_adb_dialog_view_command_button_send),
+                                        ),
+                                    )
+                                },
+                            )
+                        },
+                    )
+                }
+
+                if (automationSheet) {
+                    AppBottomSheet(
+                        show = true,
+                        onDismissRequest = { automationSheet = false },
+                        title = stringResource(R.string.home_automation_bottom_sheet_intents),
+                    ) {
+                        AutomationSheetContent(
+                            packageName = packageName,
+                            onDismiss = { automationSheet = false },
+                        )
+                    }
+                }
+
+                exitDialog?.let { (title, message) ->
+                    ConfirmActionDialog(
+                        title = title,
+                        message = message,
+                        confirmText = stringResource(R.string.home_dialog_button_exit),
+                        onDismissRequest = { exitDialog = null },
+                        onConfirm = {
+                            exitDialog = null
+                            finishAffinity()
+                        },
+                    )
+                }
+
+                if (wadbEnableUsbDebugging) {
+                    AppAlertDialog(
+                        onDismissRequest = { wadbEnableUsbDebugging = false },
+                        text = {
+                            AppText(
+                                stringResource(R.string.dialog_usb_debugging_not_enabled),
+                                role = AppTextRole.Body,
+                            )
+                        },
+                        confirmButton = {
+                            AppTextButton(
+                                text = stringResource(R.string.development_settings),
+                                onClick = {
+                                    wadbEnableUsbDebugging = false
+                                    SettingsPage.Developer.HighlightUsbDebugging.launch(this@HomeActivity)
+                                },
+                            )
+                        },
+                        dismissButton = {
+                            AppTextButton(
+                                text = stringResource(android.R.string.cancel),
+                                onClick = { wadbEnableUsbDebugging = false },
+                            )
+                        },
+                    )
+                }
+
+                if (wadbNotEnabled) {
+                    AppAlertDialog(
+                        onDismissRequest = { wadbNotEnabled = false },
+                        text = {
+                            AppText(
+                                stringResource(R.string.dialog_wireless_adb_not_enabled),
+                                role = AppTextRole.Body,
+                            )
+                        },
+                        confirmButton = {
+                            AppTextButton(
+                                text = stringResource(android.R.string.ok),
+                                onClick = { wadbNotEnabled = false },
+                            )
+                        },
+                    )
+                }
+
+                if (adbDiscovery) {
+                    AdbDiscoveryDialog(onDismiss = { adbDiscovery = false })
+                }
+
+                LaunchedEffect(discoveredPort) {
+                    if (discoveredPort !in 1..65535) return@LaunchedEffect
+                    val port = discoveredPort
+                    discoveredPort = 0
+                    adbDiscovery = false
+                    startActivity(
+                        Intent(this@HomeActivity, StarterActivity::class.java).apply {
+                            putExtra(StarterActivity.EXTRA_PORT, port)
+                        },
+                    )
+                }
                 }
             }
         }, params)
@@ -219,19 +434,8 @@ abstract class HomeActivity : AppBarActivity() {
     }
 
     private fun showExitDialog(title: String, message: String) {
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton(R.string.home_dialog_button_exit, null)
-            .setOnDismissListener {
-                this.finishAffinity()
-            }
-            .create()
-
-        dialog.setCanceledOnTouchOutside(false)
-        dialog.show()
+        exitDialog = title to message
     }
-
     private fun checkServerStatus() {
         homeModel.reload()
     }
@@ -252,7 +456,7 @@ abstract class HomeActivity : AppBarActivity() {
 
         val adbEnabled = Settings.Global.getInt(cr, Settings.Global.ADB_ENABLED, 0)
         if (adbEnabled == 0) {
-            WadbEnableUsbDebuggingDialogFragment().show(supportFragmentManager)
+            wadbEnableUsbDebugging = true
             return
         }
 
@@ -261,16 +465,16 @@ abstract class HomeActivity : AppBarActivity() {
 
         // If ADB is NOT listening to a TCP port and the device doesn't support TLS, inform the user
         if (tcpPort <= 0 && !EnvironmentUtils.isTlsSupported()) {
-            WadbNotEnabledDialogFragment().show(supportFragmentManager)
+            wadbNotEnabled = true
         // If ADB IS NOT listening to a TCP port but the device supports TLS, start mDns discovery
         } else if (tcpPort <= 0) {
-            AdbDialogFragment().show(supportFragmentManager)
+            adbDiscovery = true
         // If ADB IS listening to a TCP port but the user wants to close it and use TLS instead, close the TCP port and start mDns discovery
         } else if (!tcpMode) {
             lifecycleScope.launch(Dispatchers.IO) {
                 AdbStarter.stopTcp(this@HomeActivity, tcpPort)
             }
-            AdbDialogFragment().show(supportFragmentManager)
+            adbDiscovery = true
         // Otherwise ADB IS listening to a TCP port and the user wants to keep it open. Start Shizuku via TCP
         } else {
             val intent = Intent(this, StarterActivity::class.java).apply {
@@ -294,43 +498,11 @@ abstract class HomeActivity : AppBarActivity() {
     }
 
     private fun showAdbCommandDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.home_adb_button_view_command)
-            .setMessage(
-                HtmlCompat.fromHtml(
-                    getString(R.string.home_adb_dialog_view_command_message, Starter.adbCommand),
-                    HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE,
-                )
-            )
-            .setPositiveButton(R.string.home_adb_dialog_view_command_copy_button) { _, _ ->
-                if (ClipboardUtils.put(this, Starter.adbCommand)) {
-                    Toast.makeText(this, getString(R.string.toast_copied_to_clipboard), Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .setNeutralButton(R.string.home_adb_dialog_view_command_button_send) { _, _ ->
-                var intent = Intent(Intent.ACTION_SEND)
-                intent.type = "text/plain"
-                intent.putExtra(Intent.EXTRA_TEXT, Starter.adbCommand)
-                intent = Intent.createChooser(intent, getString(R.string.home_adb_dialog_view_command_button_send))
-                startActivity(intent)
-            }
-            .show()
+        adbCommandDialog = true
     }
-
     private fun showAutomationSheet() {
-        val dialog = BottomSheetDialog(this)
-        dialog.setContentView(ComposeView(this).apply {
-            setContent {
-                AutomationSheetContent(
-                    packageName = packageName,
-                    onDismiss = { dialog.dismiss() },
-                )
-            }
-        })
-        dialog.show()
+        automationSheet = true
     }
-
     override fun onDestroy() {
         ShizukuStateMachine.removeListener(stateListener)
         super.onDestroy()
@@ -344,46 +516,12 @@ abstract class HomeActivity : AppBarActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_about -> {
-                val icon = AppIconCache.getOrLoadBitmap(
-                    this,
-                    applicationInfo,
-                    Process.myUid() / 100000,
-                    resources.getDimensionPixelOffset(R.dimen.default_app_icon_size)
-                )
-                val versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: ""
-
-                lateinit var dialog: android.app.Dialog
-                val content = ComposeView(this).apply {
-                    setContent {
-                        AboutDialogContent(
-                            icon = icon,
-                            versionName = versionName,
-                            onClose = { dialog.dismiss() },
-                            onUpdate = {
-                                lifecycleScope.launch {
-                                    UpdateHelper.checkAndInstallUpdates()
-                                }
-                            },
-                        )
-                    }
-                }
-                dialog = MaterialAlertDialogBuilder(this)
-                    .setView(content)
-                    .create()
-                dialog.show()
+                aboutDialog = true
                 true
             }
             R.id.action_stop -> {
                 if (ShizukuStateMachine.isRunning()) {
-                    MaterialAlertDialogBuilder(this)
-                        .setMessage(R.string.dialog_stop_message)
-                        .setPositiveButton(android.R.string.ok) { _: DialogInterface?, _: Int ->
-                            ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
-                            runCatching { Shizuku.exit() }
-                                .onFailure { Log.w(AppConstants.TAG, "Failed to stop Shizuku", it) }
-                        }
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .show()
+                    stopConfirm = true
                 }
                 true
             }
@@ -393,6 +531,58 @@ abstract class HomeActivity : AppBarActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+
+    @Composable
+    private fun AdbDiscoveryDialog(onDismiss: () -> Unit) {
+        val context = LocalContext.current
+
+        LaunchedEffect(Unit) {
+            if (checkSelfPermission(WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED) {
+                Settings.Global.putInt(contentResolver, "adb_wifi_enabled", 1)
+            }
+            val mdns = AdbMdns(context, AdbMdns.TLS_CONNECT) { discoveredPort = it.second }
+            mdns.start()
+            try {
+                awaitCancellation()
+            } finally {
+                mdns.stop()
+            }
+        }
+
+        AppAlertDialog(
+            onDismissRequest = onDismiss,
+            title = { AppText(stringResource(R.string.dialog_adb_discovery)) },
+            text = {
+                Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                    AppText(
+                        stringResource(R.string.dialog_adb_discovery_message),
+                        role = AppTextRole.Body,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    AppText(
+                        stringResource(R.string.dialog_adb_discovery_message_toggle_wireless_debugging),
+                        role = AppTextRole.Body,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            confirmButton = {
+                AppTextButton(
+                    text = stringResource(R.string.development_settings),
+                    onClick = {
+                        SettingsPage.Developer.HighlightWirelessDebugging.launch(context)
+                    },
+                )
+            },
+            dismissButton = {
+                AppTextButton(
+                    text = stringResource(android.R.string.cancel),
+                    onClick = onDismiss,
+                )
+            },
+        )
     }
 
     companion object {
