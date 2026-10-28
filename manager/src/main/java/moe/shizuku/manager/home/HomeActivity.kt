@@ -130,328 +130,329 @@ abstract class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            setContent {
-                val status by homeModel.serviceStatus.asFlow()
-                    .collectAsStateWithLifecycle(initialValue = null)
-                val grantedCount by appsModel.grantedCount.asFlow()
-                    .collectAsStateWithLifecycle(initialValue = null)
+            val status by homeModel.serviceStatus.asFlow()
+                .collectAsStateWithLifecycle(initialValue = null)
+            val grantedCount by appsModel.grantedCount.asFlow()
+                .collectAsStateWithLifecycle(initialValue = null)
 
-                ShizukuTheme(
-                    nightMode = ShizukuSettings.getNightMode(),
-                    useSystemColor = ThemeHelper.isUsingSystemColor(),
-                ) {
-                AppPageScaffold(
-                    title = this@HomeActivity.activityTitle(),
-                    onBack = { this@HomeActivity.finish() },
-                    snackbarHost = { AppSnackbarHost(hostState = snackbarHostState) },
-                    actions = {
-                        AppIconButton(
-                            onClick = {
-                                startActivity(Intent(this@HomeActivity, SettingsActivity::class.java))
-                            },
-                        ) {
-                            AppIcon(
-                                imageVector = Icons.Outlined.Settings,
-                                contentDescription = stringResource(R.string.settings_title),
-                            )
-                        }
-                        AppIconButton(onClick = { overflowMenu = true }) {
-                            AppIcon(
-                                imageVector = Icons.Default.MoreVert,
-                                contentDescription = stringResource(R.string.action_about),
-                            )
-                        }
-                    },
-                ) { contentPadding, scrollModifier ->
-                HomeScreen(
-                    status = status?.data,
-                    grantedCount = grantedCount?.data ?: 0,
-                    suiUrl = Helps.SUI.get(),
-                    adbHelpUrl = Helps.ADB.get(),
-                    adbPermissionHelpUrl = Helps.ADB_PERMISSION.get(),
-                    wadbGuideUrl = Helps.ADB_ANDROID11.get(),
-                    onManageApps = {
-                        startActivity(Intent(this@HomeActivity, ApplicationManagementActivity::class.java))
-                    },
-                    onTerminal = {
-                        startActivity(Intent(this@HomeActivity, ShellTutorialActivity::class.java))
-                    },
-                    onStartRoot = {
-                        val intent = Intent(this@HomeActivity, StarterActivity::class.java)
-                        intent.putExtra(StarterActivity.EXTRA_IS_ROOT, true)
-                        startActivity(intent)
-                    },
-                    onStartWirelessAdb = { startViaWirelessAdb() },
-                    onPair = { onPairClicked() },
-                    onViewWadbGuide = {
-                        CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_ANDROID11.get())
-                    },
-                    onViewAdbCommand = { showAdbCommandDialog() },
-                    onAutomationSheet = { showAutomationSheet() },
-                    onStealth = {
-                        startActivity(Intent(this@HomeActivity, StealthTutorialActivity::class.java))
-                    },
-                    onLearnMore = {
-                        CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.HOME.get())
-                    },
-                    onAdbPermissionHelp = {
-                        CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_PERMISSION.get())
-                    },
-                )
-                }
-
-                if (aboutDialog) {
-                    val icon = AppIconCache.getOrLoadBitmap(
-                        this@HomeActivity,
-                        applicationInfo,
-                        Process.myUid() / 100000,
-                        resources.getDimensionPixelOffset(R.dimen.default_app_icon_size),
-                    )
-                    val versionName = packageManager
-                        .getPackageInfo(packageName, 0).versionName ?: ""
-                    AppAlertDialog(
-                        onDismissRequest = { aboutDialog = false },
-                        text = {
-                            AboutDialogContent(
-                                icon = icon,
-                                versionName = versionName,
-                                onClose = { aboutDialog = false },
-                                onUpdate = {
-                                    lifecycleScope.launch {
-                                        UpdateHelper.checkAndInstallUpdates()
-                                    }
-                                },
-                            )
+            ShizukuTheme(
+                nightMode = ShizukuSettings.getNightMode(),
+                useSystemColor = ThemeHelper.isUsingSystemColor(),
+            ) {
+            AppPageScaffold(
+                title = this@HomeActivity.activityTitle(),
+                onBack = { this@HomeActivity.finish() },
+                snackbarHost = { AppSnackbarHost(hostState = snackbarHostState) },
+                actions = {
+                    AppIconButton(
+                        onClick = {
+                            startActivity(Intent(this@HomeActivity, SettingsActivity::class.java))
                         },
-                    )
-                }
-
-                if (stopConfirm) {
-                    AppAlertDialog(
-                        onDismissRequest = { stopConfirm = false },
-                        text = { AppText(stringResource(R.string.dialog_stop_message)) },
-                        confirmButton = {
-                            AppTextButton(
-                                text = stringResource(android.R.string.ok),
-                                onClick = {
-                                    stopConfirm = false
-                                    ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
-                                    runCatching { Shizuku.exit() }
-                                        .onFailure { Log.w(AppConstants.TAG, "Failed to stop Shizuku", it) }
-                                },
-                            )
-                        },
-                        dismissButton = {
-                            AppTextButton(
-                                text = stringResource(android.R.string.cancel),
-                                onClick = { stopConfirm = false },
-                            )
-                        },
-                    )
-                }
-
-                if (adbCommandDialog) {
-                    val message = rememberHtmlText(
-                        R.string.home_adb_dialog_view_command_message,
-                        Starter.adbCommand,
-                    )
-                    AppAlertDialog(
-                        onDismissRequest = { adbCommandDialog = false },
-                        title = { AppText(stringResource(R.string.home_adb_button_view_command)) },
-                        text = { AppText(message) },
-                        confirmButton = {
-                            AppTextButton(
-                                text = stringResource(R.string.home_adb_dialog_view_command_copy_button),
-                                onClick = {
-                                    adbCommandDialog = false
-                                    if (ClipboardUtils.put(this@HomeActivity, Starter.adbCommand)) {
-                                        Toast.makeText(
-                                            this@HomeActivity,
-                                            getString(R.string.toast_copied_to_clipboard),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                    }
-                                },
-                            )
-                        },
-                        dismissButton = {
-                            AppTextButton(
-                                text = stringResource(R.string.home_adb_dialog_view_command_button_send),
-                                onClick = {
-                                    adbCommandDialog = false
-                                    val intent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, Starter.adbCommand)
-                                    }
-                                    startActivity(
-                                        Intent.createChooser(
-                                            intent,
-                                            getString(R.string.home_adb_dialog_view_command_button_send),
-                                        ),
-                                    )
-                                },
-                            )
-                        },
-                    )
-                }
-
-                if (automationSheet) {
-                    AppBottomSheet(
-                        show = true,
-                        onDismissRequest = { automationSheet = false },
-                        title = stringResource(R.string.home_automation_bottom_sheet_intents),
                     ) {
-                        AutomationSheetContent(
-                            packageName = packageName,
-                            onDismiss = { automationSheet = false },
+                        AppIcon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = stringResource(R.string.settings_title),
                         )
                     }
-                }
+                    AppIconButton(onClick = { overflowMenu = true }) {
+                        AppIcon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.action_about),
+                        )
+                    }
+                },
+            ) { contentPadding, scrollModifier ->
+            HomeScreen(
+                modifier = Modifier
+                    .padding(contentPadding)
+                    .then(scrollModifier),
+                status = status?.data,
+                grantedCount = grantedCount?.data ?: 0,
+                suiUrl = Helps.SUI.get(),
+                adbHelpUrl = Helps.ADB.get(),
+                adbPermissionHelpUrl = Helps.ADB_PERMISSION.get(),
+                wadbGuideUrl = Helps.ADB_ANDROID11.get(),
+                onManageApps = {
+                    startActivity(Intent(this@HomeActivity, ApplicationManagementActivity::class.java))
+                },
+                onTerminal = {
+                    startActivity(Intent(this@HomeActivity, ShellTutorialActivity::class.java))
+                },
+                onStartRoot = {
+                    val intent = Intent(this@HomeActivity, StarterActivity::class.java)
+                    intent.putExtra(StarterActivity.EXTRA_IS_ROOT, true)
+                    startActivity(intent)
+                },
+                onStartWirelessAdb = { startViaWirelessAdb() },
+                onPair = { onPairClicked() },
+                onViewWadbGuide = {
+                    CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_ANDROID11.get())
+                },
+                onViewAdbCommand = { showAdbCommandDialog() },
+                onAutomationSheet = { showAutomationSheet() },
+                onStealth = {
+                    startActivity(Intent(this@HomeActivity, StealthTutorialActivity::class.java))
+                },
+                onLearnMore = {
+                    CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.HOME.get())
+                },
+                onAdbPermissionHelp = {
+                    CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_PERMISSION.get())
+                },
+            )
+            }
 
-                exitDialog?.let { (title, message) ->
-                    ConfirmActionDialog(
-                        title = title,
-                        message = message,
-                        confirmText = stringResource(R.string.home_dialog_button_exit),
-                        onDismissRequest = { exitDialog = null },
-                        onConfirm = {
-                            exitDialog = null
-                            finishAffinity()
-                        },
+            if (aboutDialog) {
+                val icon = AppIconCache.getOrLoadBitmap(
+                    this@HomeActivity,
+                    applicationInfo,
+                    Process.myUid() / 100000,
+                    resources.getDimensionPixelOffset(R.dimen.default_app_icon_size),
+                )
+                val versionName = packageManager
+                    .getPackageInfo(packageName, 0).versionName ?: ""
+                AppAlertDialog(
+                    onDismissRequest = { aboutDialog = false },
+                    text = {
+                        AboutDialogContent(
+                            icon = icon,
+                            versionName = versionName,
+                            onClose = { aboutDialog = false },
+                            onUpdate = {
+                                lifecycleScope.launch {
+                                    UpdateHelper.checkAndInstallUpdates()
+                                }
+                            },
+                        )
+                    },
+                )
+            }
+
+            if (stopConfirm) {
+                AppAlertDialog(
+                    onDismissRequest = { stopConfirm = false },
+                    text = { AppText(stringResource(R.string.dialog_stop_message)) },
+                    confirmButton = {
+                        AppTextButton(
+                            text = stringResource(android.R.string.ok),
+                            onClick = {
+                                stopConfirm = false
+                                ShizukuStateMachine.set(ShizukuStateMachine.State.STOPPING)
+                                runCatching { Shizuku.exit() }
+                                    .onFailure { Log.w(AppConstants.TAG, "Failed to stop Shizuku", it) }
+                            },
+                        )
+                    },
+                    dismissButton = {
+                        AppTextButton(
+                            text = stringResource(android.R.string.cancel),
+                            onClick = { stopConfirm = false },
+                        )
+                    },
+                )
+            }
+
+            if (adbCommandDialog) {
+                val message = rememberHtmlText(
+                    R.string.home_adb_dialog_view_command_message,
+                    Starter.adbCommand,
+                )
+                AppAlertDialog(
+                    onDismissRequest = { adbCommandDialog = false },
+                    title = { AppText(stringResource(R.string.home_adb_button_view_command)) },
+                    text = { AppText(message) },
+                    confirmButton = {
+                        AppTextButton(
+                            text = stringResource(R.string.home_adb_dialog_view_command_copy_button),
+                            onClick = {
+                                adbCommandDialog = false
+                                if (ClipboardUtils.put(this@HomeActivity, Starter.adbCommand)) {
+                                    Toast.makeText(
+                                        this@HomeActivity,
+                                        getString(R.string.toast_copied_to_clipboard),
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            },
+                        )
+                    },
+                    dismissButton = {
+                        AppTextButton(
+                            text = stringResource(R.string.home_adb_dialog_view_command_button_send),
+                            onClick = {
+                                adbCommandDialog = false
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, Starter.adbCommand)
+                                }
+                                startActivity(
+                                    Intent.createChooser(
+                                        intent,
+                                        getString(R.string.home_adb_dialog_view_command_button_send),
+                                    ),
+                                )
+                            },
+                        )
+                    },
+                )
+            }
+
+            if (automationSheet) {
+                AppBottomSheet(
+                    show = true,
+                    onDismissRequest = { automationSheet = false },
+                    title = stringResource(R.string.home_automation_bottom_sheet_intents),
+                ) {
+                    AutomationSheetContent(
+                        packageName = packageName,
+                        onDismiss = { automationSheet = false },
                     )
                 }
+            }
 
-                if (wadbEnableUsbDebugging) {
-                    AppAlertDialog(
-                        onDismissRequest = { wadbEnableUsbDebugging = false },
-                        text = {
-                            AppText(
-                                stringResource(R.string.dialog_usb_debugging_not_enabled),
-                                role = AppTextRole.Body,
-                            )
-                        },
-                        confirmButton = {
-                            AppTextButton(
-                                text = stringResource(R.string.development_settings),
-                                onClick = {
-                                    wadbEnableUsbDebugging = false
-                                    SettingsPage.Developer.HighlightUsbDebugging.launch(this@HomeActivity)
-                                },
-                            )
-                        },
-                        dismissButton = {
-                            AppTextButton(
-                                text = stringResource(android.R.string.cancel),
-                                onClick = { wadbEnableUsbDebugging = false },
-                            )
-                        },
-                    )
-                }
+            exitDialog?.let { (title, message) ->
+                ConfirmActionDialog(
+                    title = title,
+                    message = message,
+                    confirmText = stringResource(R.string.home_dialog_button_exit),
+                    onDismissRequest = { exitDialog = null },
+                    onConfirm = {
+                        exitDialog = null
+                        finishAffinity()
+                    },
+                )
+            }
 
-                if (wadbNotEnabled) {
-                    AppAlertDialog(
-                        onDismissRequest = { wadbNotEnabled = false },
-                        text = {
-                            AppText(
-                                stringResource(R.string.dialog_wireless_adb_not_enabled),
-                                role = AppTextRole.Body,
-                            )
-                        },
-                        confirmButton = {
-                            AppTextButton(
-                                text = stringResource(android.R.string.ok),
-                                onClick = { wadbNotEnabled = false },
-                            )
-                        },
-                    )
-                }
+            if (wadbEnableUsbDebugging) {
+                AppAlertDialog(
+                    onDismissRequest = { wadbEnableUsbDebugging = false },
+                    text = {
+                        AppText(
+                            stringResource(R.string.dialog_usb_debugging_not_enabled),
+                            role = AppTextRole.Body,
+                        )
+                    },
+                    confirmButton = {
+                        AppTextButton(
+                            text = stringResource(R.string.development_settings),
+                            onClick = {
+                                wadbEnableUsbDebugging = false
+                                SettingsPage.Developer.HighlightUsbDebugging.launch(this@HomeActivity)
+                            },
+                        )
+                    },
+                    dismissButton = {
+                        AppTextButton(
+                            text = stringResource(android.R.string.cancel),
+                            onClick = { wadbEnableUsbDebugging = false },
+                        )
+                    },
+                )
+            }
 
-                if (overflowMenu) {
-                    AppListPopup(
-                        show = true,
-                        onDismissRequest = { overflowMenu = false },
-                        items = listOf(
-                            AppListPopupItem(
-                                label = stringResource(R.string.action_stop),
-                                onClick = {
-                                    overflowMenu = false
-                                    if (ShizukuStateMachine.isRunning()) stopConfirm = true
-                                },
-                            ),
-                            AppListPopupItem(
-                                label = stringResource(R.string.action_about),
-                                onClick = {
-                                    overflowMenu = false
-                                    aboutDialog = true
-                                },
-                            ),
+            if (wadbNotEnabled) {
+                AppAlertDialog(
+                    onDismissRequest = { wadbNotEnabled = false },
+                    text = {
+                        AppText(
+                            stringResource(R.string.dialog_wireless_adb_not_enabled),
+                            role = AppTextRole.Body,
+                        )
+                    },
+                    confirmButton = {
+                        AppTextButton(
+                            text = stringResource(android.R.string.ok),
+                            onClick = { wadbNotEnabled = false },
+                        )
+                    },
+                )
+            }
+
+            if (overflowMenu) {
+                AppListPopup(
+                    show = true,
+                    onDismissRequest = { overflowMenu = false },
+                    items = listOf(
+                        AppListPopupItem(
+                            label = stringResource(R.string.action_stop),
+                            onClick = {
+                                overflowMenu = false
+                                if (ShizukuStateMachine.isRunning()) stopConfirm = true
+                            },
                         ),
-                    )
-                }
+                        AppListPopupItem(
+                            label = stringResource(R.string.action_about),
+                            onClick = {
+                                overflowMenu = false
+                                aboutDialog = true
+                            },
+                        ),
+                    ),
+                )
+            }
 
-                AppSnackbarHost(hostState = snackbarHostState)
+            AppSnackbarHost(hostState = snackbarHostState)
 
-                LaunchedEffect(batterySnackbar) {
-                    if (!batterySnackbar) return@LaunchedEffect
-                    val result = snackbarHostState.showLatestSnackbar(
-                        message = getString(R.string.snackbar_battery_optimization_home),
-                        actionLabel = getString(R.string.snackbar_action_fix),
-                        duration = AppSnackbarDuration.Indefinite,
-                    )
-                    if (result == AppSnackbarResult.ActionPerformed) {
-                        SettingsHelper.requestIgnoreBatteryOptimizations(this@HomeActivity, null)
-                    }
-                    batterySnackbar = false
+            LaunchedEffect(batterySnackbar) {
+                if (!batterySnackbar) return@LaunchedEffect
+                val result = snackbarHostState.showLatestSnackbar(
+                    message = getString(R.string.snackbar_battery_optimization_home),
+                    actionLabel = getString(R.string.snackbar_action_fix),
+                    duration = AppSnackbarDuration.Indefinite,
+                )
+                if (result == AppSnackbarResult.ActionPerformed) {
+                    SettingsHelper.requestIgnoreBatteryOptimizations(this@HomeActivity, null)
                 }
+                batterySnackbar = false
+            }
 
-                LaunchedEffect(updateSnackbar) {
-                    if (!updateSnackbar) return@LaunchedEffect
-                    val result = snackbarHostState.showLatestSnackbar(
-                        message = getString(R.string.snackbar_update_available),
-                        actionLabel = getString(R.string.snackbar_action_update),
-                        duration = AppSnackbarDuration.Indefinite,
-                    )
-                    if (result == AppSnackbarResult.ActionPerformed) {
-                        lifecycleScope.launch { UpdateHelper.update() }
-                    }
-                    UpdateHelper.updateLastPromptedVersion()
-                    updateSnackbar = false
+            LaunchedEffect(updateSnackbar) {
+                if (!updateSnackbar) return@LaunchedEffect
+                val result = snackbarHostState.showLatestSnackbar(
+                    message = getString(R.string.snackbar_update_available),
+                    actionLabel = getString(R.string.snackbar_action_update),
+                    duration = AppSnackbarDuration.Indefinite,
+                )
+                if (result == AppSnackbarResult.ActionPerformed) {
+                    lifecycleScope.launch { UpdateHelper.update() }
                 }
+                UpdateHelper.updateLastPromptedVersion()
+                updateSnackbar = false
+            }
 
-                if (adbPairing) {
-                    val multiWindow = isInMultiWindowMode ||
-                        (window.decorView.display?.displayId ?: -1) > 0
-                    AppAlertDialog(
-                        onDismissRequest = { adbPairing = false },
-                        text = {
-                            AdbPairDialogContent(
-                                viewModel = adbPairModel,
-                                multiWindow = multiWindow,
-                                onDismiss = { adbPairing = false },
-                                onOpenDevelopmentSettings = {
-                                    SettingsHelper.launchOrHighlightWirelessDebugging(this@HomeActivity)
-                                },
-                            )
-                        },
-                    )
-                }
+            if (adbPairing) {
+                val multiWindow = isInMultiWindowMode ||
+                    (window.decorView.display?.displayId ?: -1) > 0
+                AppAlertDialog(
+                    onDismissRequest = { adbPairing = false },
+                    text = {
+                        AdbPairDialogContent(
+                            viewModel = adbPairModel,
+                            multiWindow = multiWindow,
+                            onDismiss = { adbPairing = false },
+                            onOpenDevelopmentSettings = {
+                                SettingsHelper.launchOrHighlightWirelessDebugging(this@HomeActivity)
+                            },
+                        )
+                    },
+                )
+            }
 
-                if (adbDiscovery) {
-                    AdbDiscoveryDialog(onDismiss = { adbDiscovery = false })
-                }
+            if (adbDiscovery) {
+                AdbDiscoveryDialog(onDismiss = { adbDiscovery = false })
+            }
 
-                LaunchedEffect(discoveredPort) {
-                    if (discoveredPort !in 1..65535) return@LaunchedEffect
-                    val port = discoveredPort
-                    discoveredPort = 0
-                    adbDiscovery = false
-                    startActivity(
-                        Intent(this@HomeActivity, StarterActivity::class.java).apply {
-                            putExtra(StarterActivity.EXTRA_PORT, port)
-                        },
-                    )
-                }
-                }
+            LaunchedEffect(discoveredPort) {
+                if (discoveredPort !in 1..65535) return@LaunchedEffect
+                val port = discoveredPort
+                discoveredPort = 0
+                adbDiscovery = false
+                startActivity(
+                    Intent(this@HomeActivity, StarterActivity::class.java).apply {
+                        putExtra(StarterActivity.EXTRA_PORT, port)
+                    },
+                )
+            }
             }
         }
 

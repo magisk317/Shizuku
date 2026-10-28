@@ -76,9 +76,10 @@ fun HomeScreen(
     onStealth: () -> Unit,
     onLearnMore: () -> Unit,
     onAdbPermissionHelp: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     if (status == null) {
-        Box(Modifier.fillMaxSize())
+        Box(modifier)
         return
     }
 
@@ -92,7 +93,7 @@ fun HomeScreen(
     val showWadb = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R || isTelevision || tcpPort > 0
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
