@@ -7,6 +7,9 @@ import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.fromHtml
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -15,7 +18,6 @@ import kotlinx.coroutines.TimeoutCancellationException
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.app.AppActivity
-import moe.shizuku.manager.databinding.ConfirmationDialogBinding
 import moe.shizuku.manager.ktx.toHtml
 import moe.shizuku.manager.utils.Logger.LOGGER
 import moe.shizuku.manager.utils.ShizukuStateMachine
@@ -107,21 +109,32 @@ class RequestPermissionActivity : AppActivity() {
             ai.packageName
         }
 
-        val binding = ConfirmationDialogBinding.inflate(layoutInflater).apply {
-            button1.setOnClickListener {
-                setResult(uid, pid, requestCode, allowed = true, onetime = false)
-                dialog.dismiss()
+        val warning = AnnotatedString.fromHtml(
+            getString(
+                R.string.permission_warning_template,
+                label,
+                getString(R.string.permission_group_description),
+            )
+        )
+
+        val content = ComposeView(this).apply {
+            setContent {
+                PermissionConfirmationContent(
+                    title = warning,
+                    onAllow = {
+                        setResult(uid, pid, requestCode, allowed = true, onetime = false)
+                        dialog.dismiss()
+                    },
+                    onDeny = {
+                        setResult(uid, pid, requestCode, allowed = false, onetime = true)
+                        dialog.dismiss()
+                    },
+                )
             }
-            button3.setOnClickListener {
-                setResult(uid, pid, requestCode, allowed = false, onetime = true)
-                dialog.dismiss()
-            }
-            title.text = HtmlCompat.fromHtml(getString(R.string.permission_warning_template,
-                    label, getString(R.string.permission_group_description)))
         }
 
         dialog = MaterialAlertDialogBuilder(this)
-                .setView(binding.root)
+                .setView(content)
                 .setCancelable(false)
                 .setOnDismissListener { finish() }
                 .create()

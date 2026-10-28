@@ -4,6 +4,21 @@ import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -28,7 +43,6 @@ import moe.shizuku.manager.adb.AdbKeyException
 import moe.shizuku.manager.adb.AdbStarter
 import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.utils.ShizukuStateMachine
-import moe.shizuku.manager.databinding.StarterActivityBinding
 import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
 
@@ -37,6 +51,7 @@ private class NotRootedException: Exception()
 class StarterActivity : AppBarActivity() {
 
     private val viewModel: ViewModel by viewModels()
+    private val outputState = mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +59,26 @@ class StarterActivity : AppBarActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_close_24)
 
-        val binding = StarterActivityBinding.inflate(layoutInflater, rootView, true)
+        setContentView(ComposeView(this).apply {
+            setContent {
+                val output by outputState
+                SelectionContainer {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    ) {
+                        Text(
+                            text = output,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+        })
 
         viewModel.output.observe(this) {
             val output = it.data!!.trim()
@@ -79,7 +113,7 @@ class StarterActivity : AppBarActivity() {
                         .show()
                 }
             }
-            binding.text1.text = output
+            outputState.value = output.toString()
         }
     }
 
