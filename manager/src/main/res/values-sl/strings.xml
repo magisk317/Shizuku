@@ -182,8 +182,6 @@
     <string name="settings_translation_summary">Pomagajte nam prevajati %s v vaš jezik</string>
     <string name="settings_user_interface">Videz</string>
     <string name="settings_black_night_theme">Tema črne noči</string>
-    <string name="settings_black_night_theme_summary">Če je omogočen nočni način, uporabite čisto
-        črno temo</string>
     <string name="settings_support">Podpora</string>
     <string name="settings_help">Pomoč</string>
     <string name="settings_report_bug">Prijavite napako</string>

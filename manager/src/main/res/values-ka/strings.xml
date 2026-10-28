@@ -182,8 +182,6 @@
     <string name="settings_translation_summary">დაგვეხმარეთ თარგმნაში %s თქვენს ენაზე</string>
     <string name="settings_user_interface">გარეგნობა</string>
     <string name="settings_black_night_theme">შავი ღამის თემა</string>
-    <string name="settings_black_night_theme_summary">გამოიყენეთ სუფთა შავი თემა, თუ ღამის რეჟიმი
-        ჩართულია</string>
     <string name="settings_support">მხარდაჭერა</string>
     <string name="settings_help">დახმარება</string>
     <string name="settings_report_bug">შეატყობინეთ ხარვეზს</string>

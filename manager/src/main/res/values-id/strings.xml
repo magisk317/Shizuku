@@ -183,8 +183,6 @@
     <string name="settings_translation_summary">Bantu kami menerjemahkan %s dengan bahasa Anda</string>
     <string name="settings_user_interface">Penampilan</string>
     <string name="settings_black_night_theme">Tema hitam gelap</string>
-    <string name="settings_black_night_theme_summary">Gunakan tema hitam gelap jika mode malam
-        diaktifkan</string>
     <string name="settings_support">Mendukung</string>
     <string name="settings_help">Membantu</string>
     <string name="settings_report_bug">Laporkan bug</string>

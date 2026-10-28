@@ -187,8 +187,6 @@
     <string name="settings_translation_summary">Aidez-nous à traduire %s dans votre langue</string>
     <string name="settings_user_interface">Apparence</string>
     <string name="settings_black_night_theme">Thème sombre noir</string>
-    <string name="settings_black_night_theme_summary">Utilise le thème noir pur si le thème sombre
-        est activé</string>
     <string name="settings_support">Soutien</string>
     <string name="settings_help">Aide</string>
     <string name="settings_report_bug">Signaler un bug</string>

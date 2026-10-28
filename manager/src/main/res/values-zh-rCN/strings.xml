@@ -136,7 +136,6 @@
     <string name="settings_translation_summary">帮助我们将 %s 翻译至您的语言</string>
     <string name="settings_user_interface">界面外观</string>
     <string name="settings_black_night_theme">黑色夜间主题</string>
-    <string name="settings_black_night_theme_summary">当夜间模式启用时使用纯黑色主题</string>
     <string name="settings_support">支持</string>
     <string name="settings_help">帮助</string>
     <string name="settings_report_bug">报告错误</string>

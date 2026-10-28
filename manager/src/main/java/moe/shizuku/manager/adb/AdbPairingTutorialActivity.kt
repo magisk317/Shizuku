@@ -54,7 +54,6 @@ class AdbPairingTutorialActivity : ComponentActivity() {
         setContent {
             ShizukuTheme(
                 nightMode = ShizukuSettings.getNightMode(),
-                blackNightTheme = ThemeHelper.isBlackNightTheme(this@AdbPairingTutorialActivity),
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 val navController = rememberNavController()

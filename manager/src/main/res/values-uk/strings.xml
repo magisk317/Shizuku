@@ -189,8 +189,6 @@
     <string name="settings_translation_summary">Допоможіть нам перекласти %s на вашу мову</string>
     <string name="settings_user_interface">Зовнішній вигляд</string>
     <string name="settings_black_night_theme">Чорна темна тема</string>
-    <string name="settings_black_night_theme_summary">Використовуйте чорну тему, якщо включений
-        нічний режим</string>
     <string name="settings_support">Підтримка</string>
     <string name="settings_help">Допомога</string>
     <string name="settings_report_bug">Повідомити про помилку</string>

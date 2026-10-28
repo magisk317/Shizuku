@@ -42,7 +42,6 @@ class SettingsActivity : ComponentActivity() {
             val snapshot by repo.snapshot.collectAsState()
             ShizukuTheme(
                 nightMode = snapshot.nightMode,
-                blackNightTheme = snapshot.blackNightTheme,
                 useSystemColor = snapshot.useSystemColor,
             ) {
                 val navController = rememberNavController()

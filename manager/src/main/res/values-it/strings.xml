@@ -184,8 +184,6 @@
     <string name="settings_translation_summary">Aiutaci a tradurre %s nella tua lingua</string>
     <string name="settings_user_interface">Aspetto</string>
     <string name="settings_black_night_theme">Tema nero notte</string>
-    <string name="settings_black_night_theme_summary">Usa il tema nero puro se la modalità notte è
-        abilitata</string>
     <string name="settings_support">Supporto</string>
     <string name="settings_help">Aiuto</string>
     <string name="settings_report_bug">Segnala un bug</string>

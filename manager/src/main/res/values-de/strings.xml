@@ -193,8 +193,6 @@
     <string name="settings_translation_summary">Uns helfen, %s in Ihre Sprache zu übersetzen</string>
     <string name="settings_user_interface">Aussehen</string>
     <string name="settings_black_night_theme">Schwarzes Thema</string>
-    <string name="settings_black_night_theme_summary">Das rein schwarze Thema verwenden, wenn der
-        Nachtmodus aktiviert ist</string>
     <string name="settings_support">Unterstützen</string>
     <string name="settings_help">Hilfe</string>
     <string name="settings_report_bug">Melde einen Fehler</string>

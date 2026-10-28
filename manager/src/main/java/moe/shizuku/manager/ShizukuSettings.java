@@ -10,7 +10,6 @@ import android.text.TextUtils;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
 import java.lang.annotation.Retention;
 import java.util.Locale;
 import moe.shizuku.manager.service.WatchdogService;
@@ -34,7 +33,6 @@ public class ShizukuSettings {
         public static final String KEY_TRANSLATION_CONTRIBUTORS = "translation_contributors";
         public static final String KEY_LIGHT_THEME = "light_theme";
         public static final String KEY_NIGHT_MODE = "night_mode";
-        public static final String KEY_BLACK_NIGHT_THEME = "black_night_theme";
         public static final String KEY_USE_SYSTEM_COLOR = "use_system_color";
         public static final String KEY_UPDATE_MODE = "update_mode";
         public static final String KEY_HELP = "help";
@@ -205,13 +203,15 @@ public class ShizukuSettings {
         getPreferences().edit().putInt(Keys.KEY_UI_KIT_STYLE, style).apply();
     }
 
-    @AppCompatDelegate.NightMode
+    // Values are MagiskThemeMode ordinals, shared with ui-kit and the sibling projects.
     public static int getNightMode() {
-        int defValue = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
-        if (EnvironmentUtils.isWatch()) {
-            defValue = AppCompatDelegate.MODE_NIGHT_YES;
-        }
-        return getPreferences().getInt(Keys.KEY_NIGHT_MODE, defValue);
+        return getPreferences().getInt(Keys.KEY_NIGHT_MODE, defaultNightMode());
+    }
+
+    private static int defaultNightMode() {
+        return EnvironmentUtils.isWatch()
+                ? io.github.magisk317.uikit.theme.MagiskThemeMode.Dark.getValue()
+                : io.github.magisk317.uikit.theme.MagiskThemeMode.System.getValue();
     }
 
     public static Locale getLocale() {

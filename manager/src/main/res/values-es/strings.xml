@@ -188,8 +188,6 @@
     <string name="settings_translation_summary">Ayúdanos a traducir %s a tu idioma</string>
     <string name="settings_user_interface">Apariencia</string>
     <string name="settings_black_night_theme">Tema Noche cerrada</string>
-    <string name="settings_black_night_theme_summary">Use el tema Noche cerrada si el modo nocturno
-        está habilitado</string>
     <string name="settings_support">Apoyo</string>
     <string name="settings_help">Ayuda</string>
     <string name="settings_report_bug">Informar de un error</string>

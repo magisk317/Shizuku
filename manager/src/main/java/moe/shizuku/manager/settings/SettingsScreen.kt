@@ -6,7 +6,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -291,24 +290,10 @@ fun SettingsScreen(
                     val value = nightValues[index]
                     if (snapshot.nightMode != value) {
                         repository.setNightMode(value)
-                        AppCompatDelegate.setDefaultNightMode(value)
                         activity?.recreate()
                     }
                 },
             )
-            if (snapshot.nightMode != AppCompatDelegate.MODE_NIGHT_NO) {
-                StateSwitchItem(
-                    title = stringResource(R.string.settings_black_night_theme),
-                    summary = "",
-                    checked = snapshot.blackNightTheme,
-                    onCheckedChange = { newValue ->
-                        repository.setBlackNightTheme(newValue)
-                        if (ResourceUtils.isNightMode(context.resources.configuration)) {
-                            activity?.recreate()
-                        }
-                    },
-                )
-            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 StateSwitchItem(
                     title = stringResource(R.string.settings_use_system_color),

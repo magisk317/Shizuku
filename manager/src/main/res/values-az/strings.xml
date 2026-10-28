@@ -183,8 +183,6 @@
         edin</string>
     <string name="settings_user_interface">Görünüş</string>
     <string name="settings_black_night_theme">Qara gecə teması</string>
-    <string name="settings_black_night_theme_summary">Gecə rejimi aktivdirsə, saf qara temasından
-        istifadə edin</string>
     <string name="settings_support">Dəstək</string>
     <string name="settings_help">Kömək edin</string>
     <string name="settings_report_bug">Bir səhv bildir</string>

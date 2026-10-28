@@ -186,8 +186,6 @@
     <string name="settings_translation_summary">Помогите перевести %s на ваш язык</string>
     <string name="settings_user_interface">Внешний вид</string>
     <string name="settings_black_night_theme">Черная тема</string>
-    <string name="settings_black_night_theme_summary">Глубокий черный цвет фона при работе темной
-        темы</string>
     <string name="settings_support">Поддерживать</string>
     <string name="settings_help">Помощь</string>
     <string name="settings_report_bug">Сообщить об ошибке</string>

@@ -138,7 +138,6 @@ abstract class HomeActivity : ComponentActivity() {
 
                 ShizukuTheme(
                     nightMode = ShizukuSettings.getNightMode(),
-                    blackNightTheme = ThemeHelper.isBlackNightTheme(this@HomeActivity),
                     useSystemColor = ThemeHelper.isUsingSystemColor(),
                 ) {
                 AppPageScaffold(

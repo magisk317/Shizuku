@@ -189,8 +189,6 @@
     <string name="settings_translation_summary">Segítsen nekünk lefordítani a %s-t az Ön nyelvére</string>
     <string name="settings_user_interface">Megjelenés</string>
     <string name="settings_black_night_theme">Sötét éj téma</string>
-    <string name="settings_black_night_theme_summary">Használja a tiszta fekete témát, ha az
-        éjszakai mód be van kapcsolva</string>
     <string name="settings_support">Támogatás</string>
     <string name="settings_help">Segítség</string>
     <string name="settings_report_bug">Hiba jelentése</string>

@@ -97,7 +97,6 @@ class ShellTutorialActivity : ComponentActivity() {
         setContent {
             ShizukuTheme(
                 nightMode = ShizukuSettings.getNightMode(),
-                blackNightTheme = ThemeHelper.isBlackNightTheme(this@ShellTutorialActivity),
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 val navController = rememberNavController()

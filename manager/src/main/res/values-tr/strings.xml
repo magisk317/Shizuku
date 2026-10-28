@@ -185,7 +185,6 @@
     <string name="settings_translation_summary">%s , dilinize çevirmemize yardımcı olun</string>
     <string name="settings_user_interface">Görünüm</string>
     <string name="settings_black_night_theme">Siyah gece teması</string>
-    <string name="settings_black_night_theme_summary">Gece modu etkinse saf siyah temasını kullanın</string>
     <string name="settings_support">Destek</string>
     <string name="settings_help">Yardım</string>
     <string name="settings_report_bug">Bir hata bildirin</string>

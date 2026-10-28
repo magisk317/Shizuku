@@ -176,8 +176,6 @@
     <string name="settings_translation_summary">Giúp chúng tôi dịch %s sang ngôn ngữ của bạn</string>
     <string name="settings_user_interface">Hiển thị</string>
     <string name="settings_black_night_theme">Chủ đề đen</string>
-    <string name="settings_black_night_theme_summary">Sử dụng chủ đề đen tuyền nếu chế độ ban đêm
-        được bật</string>
     <string name="settings_support">Ủng hộ</string>
     <string name="settings_help">Giúp đỡ</string>
     <string name="settings_report_bug">Báo cáo lỗi</string>

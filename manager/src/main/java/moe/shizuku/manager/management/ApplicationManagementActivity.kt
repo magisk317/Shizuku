@@ -76,7 +76,6 @@ class ApplicationManagementActivity : ComponentActivity() {
 
             ShizukuTheme(
                 nightMode = ShizukuSettings.getNightMode(),
-                blackNightTheme = ThemeHelper.isBlackNightTheme(this@ApplicationManagementActivity),
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 val navController = rememberNavController()

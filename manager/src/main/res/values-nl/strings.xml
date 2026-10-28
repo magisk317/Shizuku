@@ -181,8 +181,6 @@
     <string name="settings_translation_summary">Help ons %s te vertalen in uw taal</string>
     <string name="settings_user_interface">Uiterlijk</string>
     <string name="settings_black_night_theme">Puur zwarte thema</string>
-    <string name="settings_black_night_theme_summary">Gebruik het puur zwarte thema als de
-        nachtmodus is ingeschakeld</string>
     <string name="settings_support">Ondersteuning</string>
     <string name="settings_help">Hulp</string>
     <string name="settings_report_bug">Meld een bug</string>

@@ -187,8 +187,6 @@
     <string name="settings_translation_summary">Ajude-nos à traduzir %s para o seu idioma</string>
     <string name="settings_user_interface">Aparência</string>
     <string name="settings_black_night_theme">Tema preto AMOLED</string>
-    <string name="settings_black_night_theme_summary">Use o tema preto puro se o modo escuro estiver
-        habilitado. Em telas AMOLED, economiza bateria</string>
     <string name="settings_support">Apoiar</string>
     <string name="settings_help">Ajuda</string>
     <string name="settings_report_bug">Reportar um bug</string>

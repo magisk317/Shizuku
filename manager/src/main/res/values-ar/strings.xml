@@ -177,8 +177,6 @@
     <string name="settings_translation_summary">ساعدنا في ترجمة %s إلى لغتك</string>
     <string name="settings_user_interface">المظهر</string>
     <string name="settings_black_night_theme">وضع السواد النقيّ</string>
-    <string name="settings_black_night_theme_summary">استخدم سمة السواد النقيّ إذ الوضع الليلي الذي
-        بالجهاز مفعل</string>
     <string name="settings_support">يدعم</string>
     <string name="settings_help">يساعد</string>
     <string name="settings_report_bug">الإبلاغ عن خطأ</string>

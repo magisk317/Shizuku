@@ -2,15 +2,18 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <string-array name="night_mode">
+        <item>@string/follow_system</item>
         <item>@string/dark_theme_off</item>
         <item>@string/dark_theme_on</item>
-        <item>@string/follow_system</item>
+        <item>@string/settings_black_night_theme</item>
     </string-array>
 
+    <!-- Values are MagiskThemeMode ordinals, shared with ui-kit and the sibling projects. -->
     <integer-array name="night_mode_value">
+        <item>0</item>
         <item>1</item>
         <item>2</item>
-        <item>-1</item>
+        <item>3</item>
     </integer-array>
 
     <string-array name="update_mode">

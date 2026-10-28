@@ -180,8 +180,6 @@
     <string name="settings_translation_summary">Help ons om %s in jou taal te vertaal</string>
     <string name="settings_user_interface">Voorkoms</string>
     <string name="settings_black_night_theme">Swart nag tema</string>
-    <string name="settings_black_night_theme_summary">Gebruik die suiwer swart tema as nagmodus
-        geaktiveer is</string>
     <string name="settings_support">Ondersteuning</string>
     <string name="settings_help">Hulp</string>
     <string name="settings_report_bug">Rapporteer \'n fout</string>

@@ -71,7 +71,6 @@ class StealthTutorialActivity : ComponentActivity() {
 
             ShizukuTheme(
                 nightMode = ShizukuSettings.getNightMode(),
-                blackNightTheme = ThemeHelper.isBlackNightTheme(this@StealthTutorialActivity),
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 val navController = rememberNavController()

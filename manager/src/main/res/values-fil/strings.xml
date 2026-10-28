@@ -189,8 +189,6 @@
     <string name="settings_translation_summary">Tulungan kaming isalin ang %s sa iyong wika</string>
     <string name="settings_user_interface">Hitsura</string>
     <string name="settings_black_night_theme">Itim na panggabing tema</string>
-    <string name="settings_black_night_theme_summary">Gamitin ang purong itim na tema kung nakabukas
-        ang panggabing mode</string>
     <string name="settings_support">Suporta</string>
     <string name="settings_help">Tulong</string>
     <string name="settings_report_bug">Mag-ulat ng isang bug</string>

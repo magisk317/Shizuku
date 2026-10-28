@@ -130,7 +130,6 @@
     <string name="settings_translation_summary">Pomozte nám přeložit %s do vašeho jazyka</string>
     <string name="settings_user_interface">Vzhled</string>
     <string name="settings_black_night_theme">Motiv černé noci</string>
-    <string name="settings_black_night_theme_summary">Pokud je povolen noční režim, použijte motiv čistě černé barvy</string>
     <string name="settings_support">Podpora</string>
     <string name="settings_help">Pomoc</string>
     <string name="settings_report_bug">Nahlásit chybu</string>

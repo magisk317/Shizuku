@@ -1,7 +1,6 @@
 package moe.shizuku.manager.app
 
 import android.os.Build
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
@@ -23,20 +22,22 @@ import moe.shizuku.manager.R
  * the kit ships two component families and picks between them from this value,
  * so one call site renders Miuix or Expressive chrome without importing either.
  * The View chrome (appbar layouts) is style-agnostic, so only Compose moves.
+ *
+ * themeMode is a MagiskThemeMode ordinal, the same scale the sibling projects
+ * store, so PureBlack arrives as its own mode instead of a separate flag.
  */
 @Composable
 fun ShizukuTheme(
     nightMode: Int,
-    blackNightTheme: Boolean,
     useSystemColor: Boolean,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
-    val systemDark = isSystemInDarkTheme()
-    val dark = when (nightMode) {
-        AppCompatDelegate.MODE_NIGHT_NO -> false
-        AppCompatDelegate.MODE_NIGHT_YES -> true
-        else -> systemDark
+    val mode = MagiskThemeMode.fromValue(nightMode)
+    val dark = when (mode) {
+        MagiskThemeMode.Light -> false
+        MagiskThemeMode.Dark, MagiskThemeMode.PureBlack -> true
+        MagiskThemeMode.System -> isSystemInDarkTheme()
     }
     val dynamicColor = useSystemColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val accent = when {
@@ -45,11 +46,7 @@ fun ShizukuTheme(
         else -> ContextCompat.getColor(context, R.color.app_color_light)
     }
     MagiskUiKitTheme(
-        themeMode = when {
-            !dark -> MagiskThemeMode.Light.value
-            blackNightTheme -> MagiskThemeMode.PureBlack.value
-            else -> MagiskThemeMode.Dark.value
-        },
+        themeMode = mode.value,
         dynamicColor = dynamicColor,
         accentColor = accent,
         uiKitStyle = UiKitStyle.fromValue(ShizukuSettings.getUiKitStyle()),

@@ -2,7 +2,6 @@ package moe.shizuku.manager.settings
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatDelegate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,8 +28,7 @@ data class SettingsSnapshot(
     val tcpPort: String = "",
     val autoDisableUsbDebugging: Boolean = false,
     val languageTag: String = "",
-    val nightMode: Int = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM,
-    val blackNightTheme: Boolean = false,
+    val nightMode: Int = 0,
     val useSystemColor: Boolean = false,
     // ShizukuSettings.UpdateMode.STABLE, by value rather than through the nested
     // class: the Kotlin compiler resolves ShizukuSettings.Keys but not
@@ -88,7 +86,6 @@ class SettingsRepository(private val context: Context) {
         autoDisableUsbDebugging = ShizukuSettings.getAutoDisableUsbDebugging(),
         languageTag = ShizukuSettings.getPreferences().getString(KEY_LANGUAGE, null) ?: "",
         nightMode = ShizukuSettings.getNightMode(),
-        blackNightTheme = ThemeHelper.isBlackNightTheme(context),
         useSystemColor = ThemeHelper.isUsingSystemColor(),
         updateMode = ShizukuSettings.getUpdateMode(),
         legacyPairing = ShizukuSettings.getLegacyPairing(),
@@ -122,10 +119,6 @@ class SettingsRepository(private val context: Context) {
 
     fun setNightMode(mode: Int) {
         putInt(KEY_NIGHT_MODE, mode)
-    }
-
-    fun setBlackNightTheme(enabled: Boolean) {
-        putBoolean(KEY_BLACK_NIGHT_THEME, enabled)
     }
 
     fun setUseSystemColor(enabled: Boolean) {

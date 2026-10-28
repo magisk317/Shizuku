@@ -155,7 +155,6 @@
     <string name="settings_translation_summary">%s를 당신의 언어로 번역할 수 있도록 도와주세요</string>
     <string name="settings_user_interface">화면</string>
     <string name="settings_black_night_theme">검은 테마</string>
-    <string name="settings_black_night_theme_summary">어두운 테마가 사용될 때 검은 테마를 사용</string>
     <string name="settings_support">지원하다</string>
     <string name="settings_help">돕다</string>
     <string name="settings_report_bug">버그 신고</string>

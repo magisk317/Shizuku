@@ -175,8 +175,6 @@
     <string name="settings_translation_summary">Hjelp oss å oversette %s til ditt språk</string>
     <string name="settings_user_interface">Utseende</string>
     <string name="settings_black_night_theme">Svart natt-tema</string>
-    <string name="settings_black_night_theme_summary">Bruk det rene svarte temaet hvis nattmodus er
-        aktivert</string>
     <string name="settings_support">Støtte</string>
     <string name="settings_help">Hjelp</string>
     <string name="settings_report_bug">Rapporter en feil</string>

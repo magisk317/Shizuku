@@ -175,7 +175,6 @@
     <string name="settings_translation_summary">ช่วยเราแปล %s เป็นภาษาของคุณ</string>
     <string name="settings_user_interface">ลักษณะ</string>
     <string name="settings_black_night_theme">ธีมมืดมิด</string>
-    <string name="settings_black_night_theme_summary">ใช้ธีมสีดำสนิทหากธีมมืดถูกเปิดอยู่</string>
     <string name="settings_support">สนับสนุน</string>
     <string name="settings_help">ช่วย</string>
     <string name="settings_report_bug">รายงานจุดบกพร่อง</string>

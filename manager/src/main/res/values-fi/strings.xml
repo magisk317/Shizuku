@@ -181,8 +181,6 @@
     <string name="settings_translation_summary">Auta meitä kääntämään %s kielellesi</string>
     <string name="settings_user_interface">Ulkonäkö</string>
     <string name="settings_black_night_theme">Mustan yön teema</string>
-    <string name="settings_black_night_theme_summary">Käytä puhdasta mustaa teemaa, jos yötila on
-        päällä</string>
     <string name="settings_support">Tuki</string>
     <string name="settings_help">Apua</string>
     <string name="settings_report_bug">Ilmoita bugi</string>

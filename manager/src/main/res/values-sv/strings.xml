@@ -178,8 +178,6 @@
     <string name="settings_translation_summary">Hjälp oss att översätta %s till ditt språk</string>
     <string name="settings_user_interface">Utseende</string>
     <string name="settings_black_night_theme">Svart natt-tema</string>
-    <string name="settings_black_night_theme_summary">Använd temat \"pure black\" om nattläge är
-        aktiverat</string>
     <string name="settings_support">Stöd</string>
     <string name="settings_help">Hjälp</string>
     <string name="settings_report_bug">Rapportera ett fel</string>

@@ -183,8 +183,6 @@
     <string name="settings_translation_summary">Bantu kami menterjemah %s ke dalam bahasa anda</string>
     <string name="settings_user_interface">Penampilan</string>
     <string name="settings_black_night_theme">Tema malam hitam</string>
-    <string name="settings_black_night_theme_summary">Gunakan tema hitam tulen jika mod malam
-        didayakan</string>
     <string name="settings_support">Sokongan</string>
     <string name="settings_help">Tolong</string>
     <string name="settings_report_bug">Laporkan pepijat</string>

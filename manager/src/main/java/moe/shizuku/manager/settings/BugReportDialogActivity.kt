@@ -29,7 +29,6 @@ class BugReportDialogActivity : ComponentActivity() {
         setContent {
             ShizukuTheme(
                 nightMode = ShizukuSettings.getNightMode(),
-                blackNightTheme = ThemeHelper.isBlackNightTheme(this@BugReportDialogActivity),
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 AppAlertDialog(

@@ -185,8 +185,6 @@
     <string name="settings_translation_summary">Օգնեք մեզ թարգմանել %s-ը Ձեր լեզվով</string>
     <string name="settings_user_interface">Տեսք</string>
     <string name="settings_black_night_theme">Սև գիշերի տեսք</string>
-    <string name="settings_black_night_theme_summary">Օգտագործել սև տեսքը եթե գիշերային ռեժիմը
-        միացված է</string>
     <string name="settings_support">Աջակցություն</string>
     <string name="settings_help">Օգնություն</string>
     <string name="settings_report_bug">Report a bug</string>

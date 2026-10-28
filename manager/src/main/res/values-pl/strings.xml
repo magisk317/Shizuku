@@ -181,8 +181,6 @@
     <string name="settings_translation_summary">Pomóż nam tłumaczyć %s na Twój język</string>
     <string name="settings_user_interface">Wygląd</string>
     <string name="settings_black_night_theme">Czysta czerń</string>
-    <string name="settings_black_night_theme_summary">Używaj czystej czerni, gdy włączony jest tryb
-        nocny</string>
     <string name="settings_support">Wsparcie</string>
     <string name="settings_help">Pomoc</string>
     <string name="settings_report_bug">Zgłoś błąd</string>
