@@ -3,158 +3,227 @@ package moe.shizuku.manager.home
 import android.annotation.SuppressLint
 import android.app.Application
 import android.app.Dialog
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.os.Build.VERSION_CODES
 import android.os.Bundle
-import android.provider.Settings
-import android.view.Gravity
-import android.view.LayoutInflater
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
-import androidx.core.view.isVisible
-import androidx.core.widget.doAfterTextChanged
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.net.ConnectException
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.adb.*
-import moe.shizuku.manager.databinding.AdbPairDialogBinding
+import moe.shizuku.manager.adb.AdbInvalidPairingCodeException
+import moe.shizuku.manager.adb.AdbKey
+import moe.shizuku.manager.adb.AdbKeyException
+import moe.shizuku.manager.adb.AdbMdns
+import moe.shizuku.manager.adb.AdbPairingClient
+import moe.shizuku.manager.adb.PreferenceAdbKeyStore
 import moe.shizuku.manager.utils.SettingsHelper
-import moe.shizuku.manager.utils.SettingsPage
-import java.net.ConnectException
 
 @RequiresApi(VERSION_CODES.R)
 class AdbPairDialogFragment : DialogFragment() {
-
-    private lateinit var binding: AdbPairDialogBinding
 
     private val viewModel: ViewModel by activityViewModels()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val context = requireContext()
-        binding = AdbPairDialogBinding.inflate(LayoutInflater.from(context))
+        val multiWindow = requireActivity().isInMultiWindowMode ||
+            (requireActivity().window?.decorView?.display?.displayId ?: -1) > 0
 
-        val builder = MaterialAlertDialogBuilder(context).apply {
-            setTitle(R.string.dialog_adb_pairing_title)
-            setView(binding.root)
-            setNegativeButton(android.R.string.cancel, null)
-            setPositiveButton(android.R.string.ok, null)
-            setNeutralButton(R.string.development_settings, null)
-        }
-        val dialog = builder.create()
-        dialog.setCanceledOnTouchOutside(false)
-        dialog.setOnShowListener { onDialogShow(dialog) }
-        return dialog
-    }
-
-    private fun onDialogShow(dialog: AlertDialog) {
-        binding.pairingCode.editText!!.doAfterTextChanged {
-            binding.pairingCode.error = null
-        }
-
-        binding.pairingCode.error = null
-
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).isVisible = false
-
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-            SettingsHelper.launchOrHighlightWirelessDebugging(it.context)
-        }
-
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val context = it.context
-            val port = try {
-                binding.port.editText!!.text.toString().toInt()
-            } catch (e: Exception) {
-                -1
-            }
-            if (port > 65535 || port < 1) {
-                binding.port.isVisible = true
-                binding.port.error = context.getString(R.string.dialog_adb_invalid_port)
-                return@setOnClickListener
-            }
-
-            val password = binding.pairingCode.editText!!.text.toString()
-
-            viewModel.run(port, password)
-        }
-
-        viewModel.port.observe(this) {
-            if (it == -1) {
-                dialog.setTitle(R.string.dialog_adb_pairing_discovery)
-                binding.text1.isVisible = true
-                binding.pairingCode.isVisible = false
-                binding.port.editText!!.setText(it.toString())
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isVisible = false
-                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isVisible = true
-            } else {
-                dialog.setTitle(R.string.dialog_adb_pairing_title)
-                binding.text1.isVisible = false
-                binding.pairingCode.isVisible = true
-                binding.port.editText!!.setText(it.toString())
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isVisible = true
-                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isVisible = false
+        val content = ComposeView(context).apply {
+            setContent {
+                AdbPairDialogContent(
+                    viewModel = viewModel,
+                    multiWindow = multiWindow,
+                    onDismiss = { dismissAllowingStateLoss() },
+                    onOpenDevelopmentSettings = {
+                        SettingsHelper.launchOrHighlightWirelessDebugging(context)
+                    },
+                )
             }
         }
-    }
 
-    // This fragment builds its dialog in onCreateDialog, so onViewCreated never
-    // runs and onActivityCreated stays the correct hook.
-    @Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-
-        val context = requireContext()
-        val inMultiScreenOrDisplay = (requireActivity().isInMultiWindowMode
-                || (requireActivity().window?.decorView?.display?.displayId ?: -1) > 0)
-
-        binding.text1.isVisible = inMultiScreenOrDisplay
-        binding.text2.isVisible = !inMultiScreenOrDisplay
-
-        if (inMultiScreenOrDisplay) {
-            dialog?.setTitle(R.string.dialog_adb_pairing_discovery)
-        } else {
-            dialog?.setTitle(R.string.dialog_adb_pairing_title)
-        }
-
-        viewModel.result.observe(this) {
-            if (it == null) {
-                dismissAllowingStateLoss()
-            } else {
-                when (it) {
-                    is ConnectException -> {
-                        binding.port.error = context.getString(R.string.cannot_connect_port)
-                    }
-                    is AdbInvalidPairingCodeException -> {
-                        binding.pairingCode.error = context.getString(R.string.paring_code_is_wrong)
-                    }
-                    is AdbKeyException -> {
-                        Toast.makeText(context, context.getString(R.string.adb_error_key_store), Toast.LENGTH_LONG)
-                            .apply { setGravity(Gravity.CENTER, 0, 0) }.show()
-                    }
-                }
-            }
-        }
+        return MaterialAlertDialogBuilder(context)
+            .setView(content)
+            .create()
+            .apply { setCanceledOnTouchOutside(false) }
     }
 
     fun show(fragmentManager: FragmentManager) {
         if (fragmentManager.isStateSaved) return
         show(fragmentManager, javaClass.simpleName)
     }
+}
 
-    override fun getDialog(): AlertDialog? {
-        return super.getDialog() as AlertDialog?
+@Composable
+private fun AdbPairDialogContent(
+    viewModel: ViewModel,
+    multiWindow: Boolean,
+    onDismiss: () -> Unit,
+    onOpenDevelopmentSettings: () -> Unit,
+) {
+    val context = LocalContext.current
+    val discoveryPort by viewModel.port.collectAsState()
+    val result by viewModel.result.collectAsState()
+
+    var pairingCode by remember { mutableStateOf("") }
+    var portText by remember { mutableStateOf("") }
+    var portError by remember { mutableStateOf<String?>(null) }
+    var codeError by remember { mutableStateOf<String?>(null) }
+
+    // -1 means "still searching", null means the discovery has not reported yet.
+    val discovering = discoveryPort == -1
+    val canPair = discoveryPort != null && discoveryPort != -1
+
+    LaunchedEffect(discoveryPort) {
+        discoveryPort?.let { portText = it.toString() }
     }
+
+    LaunchedEffect(result) {
+        when (val r = result) {
+            is PairingResult.Success -> onDismiss()
+            is PairingResult.Failure -> when (val error = r.error) {
+                is ConnectException -> portError = context.getString(R.string.cannot_connect_port)
+                is AdbInvalidPairingCodeException -> codeError = context.getString(R.string.paring_code_is_wrong)
+                is AdbKeyException ->
+                    Toast.makeText(context, context.getString(R.string.adb_error_key_store), Toast.LENGTH_LONG)
+                        .apply { setGravity(android.view.Gravity.CENTER, 0, 0) }.show()
+                else -> Unit
+            }
+            null -> Unit
+        }
+    }
+
+    Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+        Text(
+            text = stringResource(
+                if (discovering) R.string.dialog_adb_pairing_discovery else R.string.dialog_adb_pairing_title
+            ),
+            style = MaterialTheme.typography.headlineSmall,
+        )
+
+        if (!discovering) {
+            Text(
+                text = stringResource(
+                    if (multiWindow) R.string.dialog_adb_pairing_message
+                    else R.string.adb_pairing_requires_multi_window
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+            if (!multiWindow) {
+                Text(
+                    text = stringResource(R.string.adb_pairing_requires_multi_window_reason),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        }
+
+        if (!discovering) {
+            OutlinedTextField(
+                value = pairingCode,
+                onValueChange = {
+                    pairingCode = it.filter { ch -> ch.isDigit() }.take(6)
+                    codeError = null
+                },
+                label = { Text(stringResource(R.string.dialog_adb_pairing_paring_code)) },
+                singleLine = true,
+                isError = codeError != null,
+                supportingText = codeError?.let { { Text(it) } },
+                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+            )
+        }
+
+        if (portError != null) {
+            OutlinedTextField(
+                value = portText,
+                onValueChange = {
+                    portText = it.filter { ch -> ch.isDigit() }.take(5)
+                    portError = null
+                },
+                label = { Text(stringResource(R.string.dialog_adb_port)) },
+                singleLine = true,
+                isError = true,
+                supportingText = { Text(portError!!) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 20.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+            if (discovering) {
+                TextButton(onClick = onOpenDevelopmentSettings) {
+                    Text(stringResource(R.string.development_settings))
+                }
+            }
+            if (canPair) {
+                TextButton(onClick = {
+                    val port = portText.toIntOrNull()
+                    if (port == null || port > 65535 || port < 1) {
+                        portError = context.getString(R.string.dialog_adb_invalid_port)
+                        return@TextButton
+                    }
+                    viewModel.run(port, pairingCode)
+                }) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            }
+        }
+    }
+}
+
+sealed interface PairingResult {
+    data object Success : PairingResult
+    data class Failure(val error: Throwable) : PairingResult
 }
 
 @SuppressLint("NewApi")
@@ -162,18 +231,18 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
 
     private val appContext = getApplication<Application>().applicationContext
 
-    private val _result = MutableLiveData<Throwable?>()
-    val result = _result as LiveData<Throwable?>
+    private val _result = MutableStateFlow<PairingResult?>(null)
+    val result: StateFlow<PairingResult?> = _result
 
-    private val _port = MutableLiveData<Int>()
-    val port = _port as LiveData<Int>
+    private val _port = MutableStateFlow<Int?>(null)
+    val port: StateFlow<Int?> = _port
 
     @Volatile
     private var resolvedHost: String = "127.0.0.1"
 
     private val adbMdns: AdbMdns = AdbMdns(appContext, AdbMdns.TLS_PAIRING) {
         if (it.second > 0) resolvedHost = it.first
-        _port.postValue(it.second)
+        _port.value = it.second
     }
 
     init {
@@ -190,19 +259,17 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
                 AdbKey(PreferenceAdbKeyStore(ShizukuSettings.getPreferences()), "shizuku")
             } catch (e: Throwable) {
                 e.printStackTrace()
-                _result.postValue(AdbKeyException(e))
+                _result.value = PairingResult.Failure(AdbKeyException(e))
                 return@launch
             }
 
             AdbPairingClient(host, port, password, key).runCatching {
                 start()
             }.onFailure {
-                _result.postValue(it)
+                _result.value = PairingResult.Failure(it)
                 it.printStackTrace()
             }.onSuccess {
-                if (it) {
-                    _result.postValue(null)
-                }
+                if (it) _result.value = PairingResult.Success
             }
         }
     }
