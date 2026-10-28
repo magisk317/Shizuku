@@ -3,7 +3,6 @@ package moe.shizuku.manager.starter
 import android.app.Application
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -11,17 +10,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.Shell
 import java.net.ConnectException
@@ -29,7 +26,6 @@ import java.net.SocketTimeoutException
 import javax.net.ssl.SSLProtocolException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,7 +35,6 @@ import moe.shizuku.manager.AppConstants.EXTRA
 import moe.shizuku.manager.R
 import moe.shizuku.manager.adb.AdbKeyException
 import moe.shizuku.manager.adb.AdbStarter
-import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
@@ -47,40 +42,90 @@ import io.github.magisk317.uikit.text.AppText
 import io.github.magisk317.uikit.theme.AppColorRole
 import io.github.magisk317.uikit.theme.appColor
 import io.github.magisk317.uikit.text.AppTextRole
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppScaffold
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.surface.AppTopBar
+import moe.shizuku.manager.ktx.activityTitle
 
 private class NotRootedException: Exception()
 
-class StarterActivity : AppBarActivity() {
+class StarterActivity : ComponentActivity() {
 
     private val viewModel: ViewModel by viewModels()
     private val outputState = mutableStateOf("")
 
+    // Resource id of the failure explanation; non-zero means the dialog is open.
+    private val errorMessageRes = mutableIntStateOf(0)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_close_24)
+        setContent {
+            val output by outputState
+            val messageRes by errorMessageRes
 
-        setContentView(ComposeView(this).apply {
-            setContent {
-                val output by outputState
-                SelectionContainer {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                    ) {
-                        AppText(
-                            text = output,
-                            role = AppTextRole.BodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = appColor(AppColorRole.OnSurface),
-                        )
+            AppScaffold(
+                topBar = {
+                    AppTopBar(
+                        title = this@StarterActivity.activityTitle(),
+                        navigationIcon = {
+                            AppIconButton(onClick = { this@StarterActivity.finish() }) {
+                                AppIcon(
+                                    painter = painterResource(R.drawable.ic_close_24),
+                                    contentDescription = stringResource(
+                                        androidx.appcompat.R.string.abc_action_bar_up_description,
+                                    ),
+                                )
+                            }
+                        },
+                    )
+                },
+            ) {
+                NavHost(navController = rememberNavController(), startDestination = "starter") {
+                    composable("starter") {
+                        SelectionContainer {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                            ) {
+                                AppText(
+                                    text = output,
+                                    role = AppTextRole.BodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = appColor(AppColorRole.OnSurface),
+                                )
+                            }
+                        }
                     }
                 }
             }
-        })
+
+            if (messageRes != 0) {
+                AppAlertDialog(
+                    onDismissRequest = { errorMessageRes.intValue = 0 },
+                    text = { AppText(stringResource(messageRes)) },
+                    confirmButton = {
+                        AppTextButton(
+                            text = stringResource(android.R.string.ok),
+                            onClick = { errorMessageRes.intValue = 0 },
+                        )
+                    },
+                )
+            }
+        }
 
         viewModel.output.observe(this) {
             val output = it.data!!.trim()
@@ -109,10 +154,7 @@ class StarterActivity : AppBarActivity() {
                 }
 
                 if (message != 0) {
-                    MaterialAlertDialogBuilder(this)
-                        .setMessage(message)
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show()
+                    errorMessageRes.intValue = message
                 }
             }
             outputState.value = output.toString()
