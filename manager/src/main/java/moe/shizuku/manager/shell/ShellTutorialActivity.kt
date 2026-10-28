@@ -3,23 +3,29 @@ package moe.shizuku.manager.shell
 import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
-import android.view.ViewGroup
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.compose.ui.platform.ComposeView
-import com.google.android.material.appbar.AppBarLayout
-import java.io.File
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppScaffold
+import io.github.magisk317.uikit.surface.AppTopBar
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.Helps
-import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
+import moe.shizuku.manager.ktx.activityTitle
 import moe.shizuku.manager.utils.CustomTabsHelper
 
-class ShellTutorialActivity : AppBarActivity() {
+class ShellTutorialActivity : ComponentActivity() {
 
     companion object {
 
@@ -48,7 +54,7 @@ class ShellTutorialActivity : AppBarActivity() {
                 arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME),
                 null,
                 null,
-                null
+                null,
             )?.use {
                 while (it.moveToNext()) {
                     val id = it.getString(0)
@@ -89,30 +95,42 @@ class ShellTutorialActivity : AppBarActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
-        // The content must carry the scrolling-view behaviour like every View-based
-        // child of the CoordinatorLayout root, or it renders from under the toolbar.
-        val params = CoordinatorLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
-
-        setContentView(ComposeView(this).apply {
-            setContent {
-                ShizukuTheme(
-                    nightMode = ShizukuSettings.getNightMode(),
-                    blackNightTheme = ThemeHelper.isBlackNightTheme(this@ShellTutorialActivity),
-                    useSystemColor = ThemeHelper.isUsingSystemColor(),
+        setContent {
+            ShizukuTheme(
+                nightMode = ShizukuSettings.getNightMode(),
+                blackNightTheme = ThemeHelper.isBlackNightTheme(this@ShellTutorialActivity),
+                useSystemColor = ThemeHelper.isUsingSystemColor(),
+            ) {
+                val navController = rememberNavController()
+                AppScaffold(
+                    topBar = {
+                        AppTopBar(
+                            title = this@ShellTutorialActivity.activityTitle(),
+                            navigationIcon = {
+                                AppIconButton(onClick = { this@ShellTutorialActivity.finish() }) {
+                                    AppIcon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = stringResource(
+                                            androidx.appcompat.R.string.abc_action_bar_up_description,
+                                        ),
+                                    )
+                                }
+                            },
+                        )
+                    },
                 ) {
-                    ShellTutorialScreen(
-                        onExportFiles = { openDocumentsTree.launch(null) },
-                        onOpenRishDocs = {
-                            CustomTabsHelper.launchUrlOrCopy(this@ShellTutorialActivity, Helps.RISH.get())
-                        },
-                    )
+                    NavHost(navController = navController, startDestination = "shell") {
+                        composable("shell") {
+                            ShellTutorialScreen(
+                                onExportFiles = { openDocumentsTree.launch(null) },
+                                onOpenRishDocs = {
+                                    CustomTabsHelper.launchUrlOrCopy(this@ShellTutorialActivity, Helps.RISH.get())
+                                },
+                            )
+                        }
+                    }
                 }
             }
-        }, params)
+        }
     }
 }

@@ -9,65 +9,84 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.ComposeView
-import androidx.coordinatorlayout.widget.CoordinatorLayout
-import com.google.android.material.appbar.AppBarLayout
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppScaffold
+import io.github.magisk317.uikit.surface.AppTopBar
 import moe.shizuku.manager.AppConstants
-import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
+import moe.shizuku.manager.ktx.activityTitle
 import moe.shizuku.manager.utils.SettingsHelper
 import moe.shizuku.manager.utils.SettingsPage
-import android.view.ViewGroup
 
 @RequiresApi(Build.VERSION_CODES.R)
-class AdbPairingTutorialActivity : AppBarActivity() {
+class AdbPairingTutorialActivity : ComponentActivity() {
 
     private var notificationEnabled by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
         notificationEnabled = isNotificationEnabled()
         if (notificationEnabled) {
             startPairingService()
         }
 
-        // The content must carry the scrolling-view behaviour like every View-based
-        // child of the CoordinatorLayout root, or it renders from under the toolbar.
-        val params = CoordinatorLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
-
-        setContentView(ComposeView(this).apply {
-            setContent {
-                ShizukuTheme(
-                    nightMode = ShizukuSettings.getNightMode(),
-                    blackNightTheme = ThemeHelper.isBlackNightTheme(this@AdbPairingTutorialActivity),
-                    useSystemColor = ThemeHelper.isUsingSystemColor(),
+        setContent {
+            ShizukuTheme(
+                nightMode = ShizukuSettings.getNightMode(),
+                blackNightTheme = ThemeHelper.isBlackNightTheme(this@AdbPairingTutorialActivity),
+                useSystemColor = ThemeHelper.isUsingSystemColor(),
+            ) {
+                val navController = rememberNavController()
+                AppScaffold(
+                    topBar = {
+                        AppTopBar(
+                            title = this@AdbPairingTutorialActivity.activityTitle(),
+                            navigationIcon = {
+                                AppIconButton(onClick = { this@AdbPairingTutorialActivity.finish() }) {
+                                    AppIcon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = stringResource(
+                                            androidx.appcompat.R.string.abc_action_bar_up_description,
+                                        ),
+                                    )
+                                }
+                            },
+                        )
+                    },
                 ) {
-                    AdbPairingTutorialScreen(
-                        notificationEnabled = notificationEnabled,
-                        onDeveloperOptions = {
-                            SettingsHelper.launchOrHighlightWirelessDebugging(this@AdbPairingTutorialActivity)
-                        },
-                        onNotificationSettings = {
-                            SettingsPage.Notifications.NotificationSettings.launch(this@AdbPairingTutorialActivity)
-                        },
-                    )
+                    NavHost(navController = navController, startDestination = "adbPairing") {
+                        composable("adbPairing") {
+                            AdbPairingTutorialScreen(
+                                notificationEnabled = notificationEnabled,
+                                onDeveloperOptions = {
+                                    SettingsHelper.launchOrHighlightWirelessDebugging(this@AdbPairingTutorialActivity)
+                                },
+                                onNotificationSettings = {
+                                    SettingsPage.Notifications.NotificationSettings.launch(this@AdbPairingTutorialActivity)
+                                },
+                            )
+                        }
+                    }
                 }
             }
-        }, params)
+        }
     }
 
     private fun isNotificationEnabled(): Boolean {
