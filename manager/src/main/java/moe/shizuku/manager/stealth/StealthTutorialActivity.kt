@@ -3,74 +3,168 @@ package moe.shizuku.manager.stealth
 import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
-import android.view.ViewGroup
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.material.appbar.AppBarLayout
-import android.widget.Toast
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppScaffold
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.surface.AppTopBar
+import io.github.magisk317.uikit.surface.ConfirmActionDialog
+import io.github.magisk317.uikit.text.AppText
 import java.io.File
-import android.util.Log
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
-import moe.shizuku.manager.app.AppBarActivity
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
-import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.ktx.activityTitle
 import moe.shizuku.manager.utils.ApkUtils.*
-import androidx.lifecycle.asFlow
 
-class StealthTutorialActivity : AppBarActivity() {
+class StealthTutorialActivity : ComponentActivity() {
     private val viewModel: StealthTutorialViewModel by viewModels()
 
     private lateinit var outDir: Uri
+
+    private var chooseFolder by mutableStateOf(false)
+    private var uninstallRequired by mutableStateOf(false)
+    private var cancelPending by mutableStateOf(false)
+    private var error by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         onBackPressedDispatcher.addCallback(this, backCallback)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // The content must carry the scrolling-view behaviour like every View-based
-        // child of the CoordinatorLayout root, or it renders from under the toolbar.
-        val params = CoordinatorLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
+        setContent {
+            val state by viewModel.uiState.asFlow()
+                .collectAsStateWithLifecycle(initialValue = null)
 
-        setContentView(ComposeView(this).apply {
-            setContent {
-                val state by viewModel.uiState.asFlow()
-                    .collectAsStateWithLifecycle(initialValue = null)
-
-                ShizukuTheme(
-                    nightMode = ShizukuSettings.getNightMode(),
-                    blackNightTheme = ThemeHelper.isBlackNightTheme(this@StealthTutorialActivity),
-                    useSystemColor = ThemeHelper.isUsingSystemColor(),
-                ) {
-                    StealthTutorialScreen(
-                        state = state,
-                        onAction = { action, packageNameInput ->
-                            when (action) {
-                                Action.HIDE -> {
-                                    viewModel.setPackageName(packageNameInput)
-                                    showChooseFolderDialog()
+            ShizukuTheme(
+                nightMode = ShizukuSettings.getNightMode(),
+                blackNightTheme = ThemeHelper.isBlackNightTheme(this@StealthTutorialActivity),
+                useSystemColor = ThemeHelper.isUsingSystemColor(),
+            ) {
+                val navController = rememberNavController()
+                AppScaffold(
+                    topBar = {
+                        AppTopBar(
+                            title = this@StealthTutorialActivity.activityTitle(),
+                            navigationIcon = {
+                                AppIconButton(onClick = { backCallback.handleOnBackPressed() }) {
+                                    AppIcon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = stringResource(
+                                            androidx.appcompat.R.string.abc_action_bar_up_description,
+                                        ),
+                                    )
                                 }
-                                Action.UNHIDE -> viewModel.createApk(ApkType.STUB)
-                                Action.REHIDE -> uninstallPackage(ORIGINAL_PACKAGE_NAME) { isSuccess, msg ->
-                                    handleInstallerResult(isSuccess, msg)
-                                }
-                            }
+                            },
+                        )
+                    },
+                ) { contentPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "stealth",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding),
+                    ) {
+                        composable("stealth") {
+                            StealthTutorialScreen(
+                                state = state,
+                                onAction = { action, packageNameInput ->
+                                    when (action) {
+                                        Action.HIDE -> {
+                                            viewModel.setPackageName(packageNameInput)
+                                            chooseFolder = true
+                                        }
+
+                                        Action.UNHIDE -> viewModel.createApk(ApkType.STUB)
+                                        Action.REHIDE -> uninstallPackage(ORIGINAL_PACKAGE_NAME) { isSuccess, msg ->
+                                            handleInstallerResult(isSuccess, msg)
+                                        }
+                                    }
+                                },
+                            )
+                        }
+                    }
+                }
+
+                if (chooseFolder) {
+                    ConfirmActionDialog(
+                        title = stringResource(R.string.choose_folder),
+                        message = stringResource(R.string.stealth_choose_folder_message),
+                        confirmText = stringResource(R.string.choose_folder),
+                        onDismissRequest = { chooseFolder = false },
+                        onConfirm = {
+                            chooseFolder = false
+                            pickFolderLauncher.launch(null)
+                        },
+                    )
+                }
+
+                if (uninstallRequired) {
+                    ConfirmActionDialog(
+                        title = stringResource(R.string.stealth_uninstall_required),
+                        message = stringResource(R.string.stealth_uninstall_message),
+                        confirmText = stringResource(R.string.stealth_uninstall),
+                        onDismissRequest = { uninstallRequired = false },
+                        onConfirm = {
+                            uninstallRequired = false
+                            uninstallPackage(packageName)
+                        },
+                    )
+                }
+
+                if (cancelPending) {
+                    ConfirmActionDialog(
+                        title = "${stringResource(android.R.string.cancel)}?",
+                        message = "",
+                        confirmText = stringResource(android.R.string.ok),
+                        onDismissRequest = { cancelPending = false },
+                        onConfirm = {
+                            cancelPending = false
+                            finish()
+                        },
+                    )
+                }
+
+                error?.let { message ->
+                    AppAlertDialog(
+                        onDismissRequest = { error = null },
+                        title = { AppText(stringResource(R.string.error)) },
+                        text = { AppText(message) },
+                        confirmButton = {
+                            AppTextButton(
+                                text = stringResource(android.R.string.ok),
+                                onClick = { error = null },
+                            )
                         },
                     )
                 }
             }
-        }, params)
+        }
 
         viewModel.uiState.observe(this) { state ->
             when (state) {
@@ -82,7 +176,7 @@ class StealthTutorialActivity : AppBarActivity() {
                             ApkType.CLONE -> {
                                 export(apk)
                                 viewModel.refresh()
-                                showUninstallDialog()
+                                uninstallRequired = true
                             }
 
                             ApkType.STUB -> {
@@ -90,10 +184,11 @@ class StealthTutorialActivity : AppBarActivity() {
                             }
                         }
                     } catch (e: Exception) {
-                        showErrorDialog(e)
+                        showError(e)
                     }
                 }
-                is UiState.Error -> showErrorDialog(state.error)
+
+                is UiState.Error -> showError(state.error)
                 is UiState.Loading, null -> Unit
             }
         }
@@ -104,16 +199,6 @@ class StealthTutorialActivity : AppBarActivity() {
             unregisterReceiver(installerReceiver)
         }.onFailure { Log.w(AppConstants.TAG, "Failed to unregister the install receiver", it) }
         super.onDestroy()
-    }
-
-    private fun showChooseFolderDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.choose_folder)
-            .setMessage(R.string.stealth_choose_folder_message)
-            .setNegativeButton(android.R.string.cancel) { _, _ -> }
-            .setPositiveButton(R.string.choose_folder) { _, _ ->
-                pickFolderLauncher.launch(null)
-            }.show()
     }
 
     private val pickFolderLauncher =
@@ -148,16 +233,6 @@ class StealthTutorialActivity : AppBarActivity() {
         }
     }
 
-    private fun showUninstallDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.stealth_uninstall_required)
-            .setMessage(R.string.stealth_uninstall_message)
-            .setPositiveButton(R.string.stealth_uninstall) { _, _ ->
-                uninstallPackage(packageName)
-            }.setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
     private fun handleInstallerResult(isSuccess: Boolean, msg: String?) {
         viewModel.refresh()
         if (isSuccess) {
@@ -166,15 +241,11 @@ class StealthTutorialActivity : AppBarActivity() {
                 getString(R.string.success),
                 Toast.LENGTH_SHORT,
             ).show()
-        } else showErrorDialog(Exception(msg ?: "Unknown error"))
+        } else showError(Exception(msg ?: "Unknown error"))
     }
 
-    private fun showErrorDialog(error: Exception) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.error)
-            .setMessage(error.message)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
+    private fun showError(e: Exception) {
+        error = e.message
     }
 
     private val backCallback =
@@ -185,18 +256,9 @@ class StealthTutorialActivity : AppBarActivity() {
                     finish()
                     return
                 }
-                MaterialAlertDialogBuilder(this@StealthTutorialActivity)
-                    .setTitle("${getString(android.R.string.cancel)}?")
-                    .setPositiveButton(android.R.string.yes) { _, _ -> finish() }
-                    .setNegativeButton(android.R.string.no, null)
-                    .show()
+                cancelPending = true
             }
         }
-
-    override fun onSupportNavigateUp(): Boolean {
-        backCallback.handleOnBackPressed()
-        return true
-    }
 
     // Window.navigationBarColor is deprecated with no replacement below API 35.
     @Suppress("DEPRECATION")
