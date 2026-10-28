@@ -4,8 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -68,20 +67,22 @@ class SettingsActivity : ComponentActivity() {
                         )
                     },
                 ) { contentPadding ->
-                    NavHost(navController = navController, startDestination = "settings") {
+                    NavHost(
+                        navController = navController,
+                        startDestination = "settings",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding),
+                    ) {
                         composable("settings") {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(contentPadding),
-                            ) {
-                                SettingsScreen(
-                                    repository = repo,
-                                    onBugReport = {
-                                        startActivity(Intent(this@SettingsActivity, BugReportDialogActivity::class.java))
-                                    },
-                                )
-                            }
+                            SettingsScreen(
+                                repository = repo,
+                                onBugReport = {
+                                    startActivity(
+                                        Intent(this@SettingsActivity, BugReportDialogActivity::class.java),
+                                    )
+                                },
+                            )
                         }
                     }
                 }

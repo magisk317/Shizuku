@@ -13,11 +13,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -70,8 +73,14 @@ class AdbPairingTutorialActivity : ComponentActivity() {
                             },
                         )
                     },
-                ) {
-                    NavHost(navController = navController, startDestination = "adbPairing") {
+                ) { contentPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "adbPairing",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding),
+                    ) {
                         composable("adbPairing") {
                             AdbPairingTutorialScreen(
                                 notificationEnabled = notificationEnabled,
