@@ -24,7 +24,14 @@ class ShellTutorialActivity : AppBarActivity() {
     companion object {
 
         private val SH_NAME = "rish"
-        private val DEX_NAME = "rish_shizuku.dex"
+
+        /**
+         * An unminified build splits this module across rish_shizuku2.dex and beyond, and the
+         * rish script loads every part as a ":"-separated classpath, so the export has to ship
+         * all of them - a lone rish_shizuku.dex no longer runs.
+         */
+        private val DEX_PREFIX = "rish_shizuku"
+        private val DEX_SUFFIX = ".dex"
     }
 
     private val openDocumentsTree =
@@ -46,7 +53,7 @@ class ShellTutorialActivity : AppBarActivity() {
                 while (it.moveToNext()) {
                     val id = it.getString(0)
                     val name = it.getString(1)
-                    if (name == SH_NAME || name == DEX_NAME) {
+                    if (name == SH_NAME || (name.startsWith(DEX_PREFIX) && name.endsWith(DEX_SUFFIX))) {
                         DocumentsContract.deleteDocument(cr, DocumentsContract.buildDocumentUriUsingTree(tree, id))
                     }
                 }
@@ -72,8 +79,11 @@ class ShellTutorialActivity : AppBarActivity() {
                 }.onFailure { Log.w(AppConstants.TAG, "Failed to write $name to the picked document", it) }
             }
 
+            assets.list("").orEmpty()
+                .filter { it.startsWith(DEX_PREFIX) && it.endsWith(DEX_SUFFIX) }
+                .sorted()
+                .forEach { writeToDocument(it) }
             writeToDocument(SH_NAME)
-            writeToDocument(DEX_NAME)
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {

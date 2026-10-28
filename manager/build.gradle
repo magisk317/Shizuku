@@ -46,6 +46,14 @@ android {
     dependenciesInfo {
         includeInApk = false
     }
+    // :shell:extractRishDex<Variant> drops the shell module's dex into a
+    // variant-scoped directory here; the build type source set is what binds it
+    // to the variant being assembled, so debug and release never see each
+    // other's parts.
+    sourceSets {
+        debug { assets.srcDirs += ["build/generated/rishDex/debug"] }
+        release { assets.srcDirs += ["build/generated/rishDex/release"] }
+    }
     lint {
         checkReleaseBuilds = false
     }
@@ -62,7 +70,7 @@ android {
 // Re-run the two plugins on an AGP 8 build to regenerate them after a palette or
 // locale change.
 
-// assets/rish_shizuku.dex is generated out of the shell module's APK, so the
+// assets/rish_shizuku*.dex is generated out of the shell module's APK, so the
 // manager must not package before the matching shell variant has been
 // extracted. APK naming/version injection comes from magisk.app.packaging.
 tasks.configureEach {
