@@ -8,6 +8,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import io.github.magisk317.uikit.theme.MagiskThemeMode
 import io.github.magisk317.uikit.theme.MagiskUiKitTheme
+import io.github.magisk317.uikit.theme.UiKitStyle
+import moe.shizuku.manager.ShizukuSettings
 import moe.shizuku.manager.R
 
 /**
@@ -16,6 +18,11 @@ import moe.shizuku.manager.R
  * otherwise, and the black palette for the black night theme. This applies the
  * same choices to Compose surfaces through ui-kit's theme, so screens on both
  * sides of the View-to-Compose migration render from one set of colours.
+ *
+ * The style axis is read here rather than passed by each of the six call sites:
+ * the kit ships two component families and picks between them from this value,
+ * so one call site renders Miuix or Expressive chrome without importing either.
+ * The View chrome (appbar layouts) is style-agnostic, so only Compose moves.
  */
 @Composable
 fun ShizukuTheme(
@@ -45,6 +52,7 @@ fun ShizukuTheme(
         },
         dynamicColor = dynamicColor,
         accentColor = accent,
+        uiKitStyle = UiKitStyle.fromValue(ShizukuSettings.getUiKitStyle()),
         content = content,
     )
 }

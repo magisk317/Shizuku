@@ -37,6 +37,7 @@ data class SettingsSnapshot(
     // ShizukuSettings.UpdateMode from the Java sources of this module.
     val updateMode: Int = 1,
     val legacyPairing: Boolean = false,
+    val uiKitStyle: Int = 0,
 )
 
 /** The language picker's display model, built once per language change. */
@@ -91,6 +92,7 @@ class SettingsRepository(private val context: Context) {
         useSystemColor = ThemeHelper.isUsingSystemColor(),
         updateMode = ShizukuSettings.getUpdateMode(),
         legacyPairing = ShizukuSettings.getLegacyPairing(),
+        uiKitStyle = ShizukuSettings.getUiKitStyle(),
     )
 
     fun setStartOnBoot(enabled: Boolean) {
@@ -136,6 +138,10 @@ class SettingsRepository(private val context: Context) {
 
     fun setLegacyPairing(enabled: Boolean) {
         putBoolean(KEY_LEGACY_PAIRING, enabled)
+    }
+
+    fun setUiKitStyle(style: Int) {
+        putInt(KEY_UI_KIT_STYLE, style)
     }
 
     /**

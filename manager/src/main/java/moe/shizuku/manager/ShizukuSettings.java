@@ -40,6 +40,7 @@ public class ShizukuSettings {
         public static final String KEY_HELP = "help";
         public static final String KEY_REPORT_BUG = "report_bug";
         public static final String KEY_LEGACY_PAIRING = "legacy_pairing";
+        public static final String KEY_UI_KIT_STYLE = "ui_kit_style";
         public static final String KEY_CATEGORY_ADVANCED = "category_advanced";
     }
 
@@ -194,6 +195,14 @@ public class ShizukuSettings {
 
     public static boolean getLegacyPairing() {
         return getPreferences().getBoolean(Keys.KEY_LEGACY_PAIRING, false);
+    }
+
+    public static int getUiKitStyle() {
+        return getPreferences().getInt(Keys.KEY_UI_KIT_STYLE, 0);
+    }
+
+    public static void setUiKitStyle(int style) {
+        getPreferences().edit().putInt(Keys.KEY_UI_KIT_STYLE, style).apply();
     }
 
     @AppCompatDelegate.NightMode

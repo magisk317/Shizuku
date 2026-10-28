@@ -176,6 +176,9 @@
     <string name="settings_translation_contributors">Translation contributors</string>
     <string name="settings_translation">Participate in translation</string>
     <string name="settings_translation_summary">Help us translate %s into your language</string>
+    <string name="settings_ui_kit_style">界面风格</string>
+    <string name="settings_ui_kit_style_expressive">Expressive</string>
+    <string name="settings_ui_kit_style_miuix">Miuix</string>
     <string name="settings_user_interface">Appearance</string>
     <string name="settings_black_night_theme">Black night theme</string>
     <string name="settings_black_night_theme_summary">Use the pure black theme if night mode is enabled</string>

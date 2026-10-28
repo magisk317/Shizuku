@@ -256,8 +256,28 @@ fun SettingsScreen(
             sectionExpanded = true,
             onExpandedChange = {},
         ) {
+            val styleOptions = remember {
+                listOf(
+                    context.getString(R.string.settings_ui_kit_style_expressive),
+                    context.getString(R.string.settings_ui_kit_style_miuix),
+                )
+            }
+            val styleValues = remember { listOf(0, 1) }
             val nightOptions = remember { context.resources.getStringArray(R.array.night_mode).toList() }
             val nightValues = remember { context.resources.getIntArray(R.array.night_mode_value).toList() }
+            SettingsChoiceRow(
+                title = stringResource(R.string.settings_ui_kit_style),
+                summary = styleOptions[styleValues.indexOf(snapshot.uiKitStyle).coerceAtLeast(0)],
+                options = styleOptions,
+                selectedIndex = styleValues.indexOf(snapshot.uiKitStyle).coerceAtLeast(0),
+                onSelect = { index ->
+                    val style = styleValues[index]
+                    if (style != snapshot.uiKitStyle) {
+                        repository.setUiKitStyle(style)
+                        activity?.recreate()
+                    }
+                },
+            )
             SettingsChoiceRow(
                 title = stringResource(R.string.dark_theme),
                 summary = nightOptions.getOrElse(nightValues.indexOf(snapshot.nightMode)) { "" },
