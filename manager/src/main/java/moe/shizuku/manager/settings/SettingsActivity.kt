@@ -1,52 +1,91 @@
 package moe.shizuku.manager.settings
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.ViewGroup
-import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.ComposeView
-import com.google.android.material.appbar.AppBarLayout
-import moe.shizuku.manager.app.AppBarActivity
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppScaffold
+import io.github.magisk317.uikit.surface.AppTopBar
 import moe.shizuku.manager.app.ShizukuTheme
+import moe.shizuku.manager.ktx.activityTitle
 
-class SettingsActivity : AppBarActivity() {
+/**
+ * ComponentActivity, not Shizuku's AppActivity/MaterialActivity chain: the miuix
+ * overlay popups used by the settings rows need the navigation event dispatcher
+ * that activity-compose installs for a plain ComponentActivity, and an
+ * AppCompatActivity (rikka's MaterialActivity) does not provide it.
+ */
+class SettingsActivity : ComponentActivity() {
 
     private val repository by lazy { SettingsRepository(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // The content must carry the scrolling-view behaviour like every View-based
-        // child of the CoordinatorLayout root, or it renders from under the toolbar
-        // and the top of the list stays out of scroll reach.
-        val params = CoordinatorLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
-
-        setContentView(ComposeView(this).apply {
-            setContent {
-                val repo = remember { repository }
-                DisposableEffect(repo) {
-                    repo.start()
-                    onDispose { repo.stop() }
-                }
-                val snapshot by repo.snapshot.collectAsState()
-                ShizukuTheme(
-                    nightMode = snapshot.nightMode,
-                    blackNightTheme = snapshot.blackNightTheme,
-                    useSystemColor = snapshot.useSystemColor,
-                ) {
-                    SettingsScreen(
-                        repository = repo,
-                        onBugReport = { BugReportDialog().show(supportFragmentManager, "BugReportDialog") },
-                    )
+        setContent {
+            val repo = remember { repository }
+            DisposableEffect(repo) {
+                repo.start()
+                onDispose { repo.stop() }
+            }
+            val snapshot by repo.snapshot.collectAsState()
+            ShizukuTheme(
+                nightMode = snapshot.nightMode,
+                blackNightTheme = snapshot.blackNightTheme,
+                useSystemColor = snapshot.useSystemColor,
+            ) {
+                val navController = rememberNavController()
+                AppScaffold(
+                    topBar = {
+                        AppTopBar(
+                            title = this@SettingsActivity.activityTitle(),
+                            navigationIcon = {
+                                AppIconButton(onClick = { this@SettingsActivity.finish() }) {
+                                    AppIcon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = stringResource(
+                                            androidx.appcompat.R.string.abc_action_bar_up_description,
+                                        ),
+                                    )
+                                }
+                            },
+                        )
+                    },
+                ) { contentPadding ->
+                    NavHost(navController = navController, startDestination = "settings") {
+                        composable("settings") {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(contentPadding),
+                            ) {
+                                SettingsScreen(
+                                    repository = repo,
+                                    onBugReport = {
+                                        startActivity(Intent(this@SettingsActivity, BugReportDialogActivity::class.java))
+                                    },
+                                )
+                            }
+                        }
+                    }
                 }
             }
-        }, params)
+        }
     }
 }
