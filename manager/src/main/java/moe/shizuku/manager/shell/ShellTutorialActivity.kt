@@ -9,20 +9,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.magisk317.uikit.surface.AppIcon
-import io.github.magisk317.uikit.surface.AppIconButton
-import io.github.magisk317.uikit.surface.AppScaffold
-import io.github.magisk317.uikit.surface.AppTopBar
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.app.AppPageScaffold
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.ktx.activityTitle
@@ -105,29 +101,17 @@ class ShellTutorialActivity : ComponentActivity() {
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 val navController = rememberNavController()
-                AppScaffold(
-                    topBar = {
-                        AppTopBar(
-                            title = this@ShellTutorialActivity.activityTitle(),
-                            navigationIcon = {
-                                AppIconButton(onClick = { this@ShellTutorialActivity.finish() }) {
-                                    AppIcon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = stringResource(
-                                            androidx.appcompat.R.string.abc_action_bar_up_description,
-                                        ),
-                                    )
-                                }
-                            },
-                        )
-                    },
-                ) { contentPadding ->
+                AppPageScaffold(
+                    title = this@ShellTutorialActivity.activityTitle(),
+                    onBack = { this@ShellTutorialActivity.finish() },
+                ) { contentPadding, scrollModifier ->
                     NavHost(
                         navController = navController,
                         startDestination = "shell",
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(contentPadding),
+                            .padding(contentPadding)
+                            .then(scrollModifier),
                     ) {
                         composable("shell") {
                             ShellTutorialScreen(

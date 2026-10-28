@@ -6,8 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -18,9 +16,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.magisk317.uikit.surface.AppIcon
-import io.github.magisk317.uikit.surface.AppIconButton
-import io.github.magisk317.uikit.surface.AppScaffold
-import io.github.magisk317.uikit.surface.AppTopBar
+import moe.shizuku.manager.app.AppPageScaffold
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.ktx.activityTitle
 
@@ -50,29 +46,17 @@ class SettingsActivity : ComponentActivity() {
                 useSystemColor = snapshot.useSystemColor,
             ) {
                 val navController = rememberNavController()
-                AppScaffold(
-                    topBar = {
-                        AppTopBar(
-                            title = this@SettingsActivity.activityTitle(),
-                            navigationIcon = {
-                                AppIconButton(onClick = { this@SettingsActivity.finish() }) {
-                                    AppIcon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = stringResource(
-                                            androidx.appcompat.R.string.abc_action_bar_up_description,
-                                        ),
-                                    )
-                                }
-                            },
-                        )
-                    },
-                ) { contentPadding ->
+                AppPageScaffold(
+                    title = this@SettingsActivity.activityTitle(),
+                    onBack = { this@SettingsActivity.finish() },
+                ) { contentPadding, scrollModifier ->
                     NavHost(
                         navController = navController,
                         startDestination = "settings",
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(contentPadding),
+                            .padding(contentPadding)
+                            .then(scrollModifier),
                     ) {
                         composable("settings") {
                             SettingsScreen(

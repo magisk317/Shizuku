@@ -12,19 +12,26 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppCircularProgressIndicator
+import io.github.magisk317.uikit.surface.AppExtendedFloatingActionButton
+import io.github.magisk317.uikit.surface.AppFloatingActionButton
 import io.github.magisk317.uikit.surface.AppIcon
 import io.github.magisk317.uikit.surface.AppIconButton
 import io.github.magisk317.uikit.surface.AppScaffold
@@ -36,6 +43,7 @@ import java.io.File
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.app.AppPageScaffold
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.ktx.activityTitle
@@ -45,6 +53,7 @@ class StealthTutorialActivity : ComponentActivity() {
     private val viewModel: StealthTutorialViewModel by viewModels()
 
     private lateinit var outDir: Uri
+    private var stealthPackageName by mutableStateOf("")
 
     private var chooseFolder by mutableStateOf(false)
     private var uninstallRequired by mutableStateOf(false)
@@ -66,46 +75,24 @@ class StealthTutorialActivity : ComponentActivity() {
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 val navController = rememberNavController()
-                AppScaffold(
-                    topBar = {
-                        AppTopBar(
-                            title = this@StealthTutorialActivity.activityTitle(),
-                            navigationIcon = {
-                                AppIconButton(onClick = { backCallback.handleOnBackPressed() }) {
-                                    AppIcon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = stringResource(
-                                            androidx.appcompat.R.string.abc_action_bar_up_description,
-                                        ),
-                                    )
-                                }
-                            },
-                        )
-                    },
-                ) { contentPadding ->
+                AppPageScaffold(
+                    title = this@StealthTutorialActivity.activityTitle(),
+                    onBack = { this@StealthTutorialActivity.finish() },
+                    floatingActionButton = { StealthFab() },
+                ) { contentPadding, scrollModifier ->
                     NavHost(
                         navController = navController,
                         startDestination = "stealth",
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(contentPadding),
+                            .padding(contentPadding)
+                            .then(scrollModifier),
                     ) {
                         composable("stealth") {
                             StealthTutorialScreen(
                                 state = state,
-                                onAction = { action, packageNameInput ->
-                                    when (action) {
-                                        Action.HIDE -> {
-                                            viewModel.setPackageName(packageNameInput)
-                                            chooseFolder = true
-                                        }
-
-                                        Action.UNHIDE -> viewModel.createApk(ApkType.STUB)
-                                        Action.REHIDE -> uninstallPackage(ORIGINAL_PACKAGE_NAME) { isSuccess, msg ->
-                                            handleInstallerResult(isSuccess, msg)
-                                        }
-                                    }
-                                },
+                                packageName = stealthPackageName,
+                                onPackageNameChange = { stealthPackageName = it },
                             )
                         }
                     }
@@ -231,6 +218,45 @@ class StealthTutorialActivity : ComponentActivity() {
                 input.copyTo(output)
             }
         }
+    }
+
+
+
+
+    @Composable
+    private fun StealthFab() {
+        val state = viewModel.uiState.value
+        val busy = state is UiState.Loading || state is UiState.Pending
+        val action = (state as? UiState.Idle)?.action
+        if (busy) {
+            AppFloatingActionButton(onClick = {}) {
+                AppCircularProgressIndicator(Modifier.size(20.dp))
+            }
+            return
+        }
+        if (action == null) return
+
+        AppExtendedFloatingActionButton(
+            text = stringResource(
+                if (action == Action.UNHIDE) R.string.stealth_unhide else R.string.stealth_hide,
+            ),
+            icon = painterResource(
+                if (action == Action.UNHIDE) R.drawable.ic_visibility_on_filled_24
+                else R.drawable.ic_visibility_off_filled_24,
+            ),
+            onClick = {
+                if (stealthPackageName.validatePackageName() == null) {
+                    viewModel.setPackageName(stealthPackageName)
+                    when (action) {
+                        Action.HIDE -> chooseFolder = true
+                        Action.UNHIDE -> viewModel.createApk(ApkType.STUB)
+                        Action.REHIDE -> uninstallPackage(ORIGINAL_PACKAGE_NAME) { ok, msg ->
+                            handleInstallerResult(ok, msg)
+                        }
+                    }
+                }
+            },
+        )
     }
 
     private fun handleInstallerResult(isSuccess: Boolean, msg: String?) {

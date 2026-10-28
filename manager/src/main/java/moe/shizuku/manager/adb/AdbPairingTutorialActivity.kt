@@ -31,6 +31,7 @@ import io.github.magisk317.uikit.surface.AppScaffold
 import io.github.magisk317.uikit.surface.AppTopBar
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.app.AppPageScaffold
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.ktx.activityTitle
@@ -57,29 +58,17 @@ class AdbPairingTutorialActivity : ComponentActivity() {
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 val navController = rememberNavController()
-                AppScaffold(
-                    topBar = {
-                        AppTopBar(
-                            title = this@AdbPairingTutorialActivity.activityTitle(),
-                            navigationIcon = {
-                                AppIconButton(onClick = { this@AdbPairingTutorialActivity.finish() }) {
-                                    AppIcon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = stringResource(
-                                            androidx.appcompat.R.string.abc_action_bar_up_description,
-                                        ),
-                                    )
-                                }
-                            },
-                        )
-                    },
-                ) { contentPadding ->
+                AppPageScaffold(
+                    title = this@AdbPairingTutorialActivity.activityTitle(),
+                    onBack = { this@AdbPairingTutorialActivity.finish() },
+                ) { contentPadding, scrollModifier ->
                     NavHost(
                         navController = navController,
                         startDestination = "adbPairing",
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(contentPadding),
+                            .padding(contentPadding)
+                            .then(scrollModifier),
                     ) {
                         composable("adbPairing") {
                             AdbPairingTutorialScreen(

@@ -32,9 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.R
 import rikka.core.util.ClipboardUtils
-import io.github.magisk317.uikit.surface.AppCircularProgressIndicator
-import io.github.magisk317.uikit.surface.AppExtendedFloatingActionButton
-import io.github.magisk317.uikit.surface.AppFloatingActionButton
 import io.github.magisk317.uikit.surface.AppIcon
 import io.github.magisk317.uikit.surface.AppTextField
 import io.github.magisk317.uikit.text.AppText
@@ -51,10 +48,10 @@ import io.github.magisk317.uikit.theme.appColor
 @Composable
 fun StealthTutorialScreen(
     state: UiState?,
-    onAction: (Action, String?) -> Unit,
+    packageName: String,
+    onPackageNameChange: (String) -> Unit,
 ) {
     val context = LocalContext.current
-    var packageName by remember { mutableStateOf("") }
     val validationError = remember(packageName) { packageName.validatePackageName() }
     val busy = state is UiState.Loading || state is UiState.Pending
     val action = (state as? UiState.Idle)?.action
@@ -143,7 +140,7 @@ fun StealthTutorialScreen(
             ) {
                 AppTextField(
                     value = packageName,
-                    onValueChange = { packageName = it },
+                    onValueChange = onPackageNameChange,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     label = stringResource(R.string.stealth_package_name),
@@ -159,35 +156,6 @@ fun StealthTutorialScreen(
             }
         }
 
-        val fabAction = action
-        if (!busy && fabAction != null) {
-            val label = stringResource(
-                if (fabAction == Action.UNHIDE) R.string.stealth_unhide else R.string.stealth_hide
-            )
-            val icon = painterResource(
-                if (fabAction == Action.UNHIDE) R.drawable.ic_visibility_on_filled_24
-                else R.drawable.ic_visibility_off_filled_24
-            )
-            AppExtendedFloatingActionButton(
-                text = label,
-                icon = icon,
-                onClick = {
-                    if (validationError == null) onAction(fabAction, packageName.ifEmpty { null })
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 20.dp, bottom = if (showInput) 96.dp else 24.dp),
-            )
-        } else if (busy) {
-            AppFloatingActionButton(
-                onClick = {},
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 20.dp, bottom = if (showInput) 96.dp else 24.dp),
-            ) {
-                AppCircularProgressIndicator(Modifier.size(20.dp))
-            }
-        }
     }
 }
 

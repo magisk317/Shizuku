@@ -8,8 +8,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -23,15 +21,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.magisk317.uikit.surface.AppAlertDialog
 import io.github.magisk317.uikit.surface.AppIcon
-import io.github.magisk317.uikit.surface.AppIconButton
-import io.github.magisk317.uikit.surface.AppScaffold
 import io.github.magisk317.uikit.surface.AppTextButton
-import io.github.magisk317.uikit.surface.AppTopBar
 import io.github.magisk317.uikit.text.AppText
 import java.util.Objects
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
+import moe.shizuku.manager.app.AppPageScaffold
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.authorization.AuthorizationManager
@@ -84,29 +80,17 @@ class ApplicationManagementActivity : ComponentActivity() {
                 useSystemColor = ThemeHelper.isUsingSystemColor(),
             ) {
                 val navController = rememberNavController()
-                AppScaffold(
-                    topBar = {
-                        AppTopBar(
-                            title = this@ApplicationManagementActivity.activityTitle(),
-                            navigationIcon = {
-                                AppIconButton(onClick = { this@ApplicationManagementActivity.finish() }) {
-                                    AppIcon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = stringResource(
-                                            androidx.appcompat.R.string.abc_action_bar_up_description,
-                                        ),
-                                    )
-                                }
-                            },
-                        )
-                    },
-                ) { contentPadding ->
+                AppPageScaffold(
+                    title = this@ApplicationManagementActivity.activityTitle(),
+                    onBack = { this@ApplicationManagementActivity.finish() },
+                ) { contentPadding, scrollModifier ->
                     NavHost(
                         navController = navController,
                         startDestination = "apps",
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(contentPadding),
+                            .padding(contentPadding)
+                            .then(scrollModifier),
                     ) {
                         composable("apps") {
                             AppsScreen(
