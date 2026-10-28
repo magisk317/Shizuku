@@ -1,11 +1,9 @@
 package moe.shizuku.manager.ktx
 
 import android.graphics.Typeface
-import android.text.Spanned
 import android.text.style.StyleSpan
 import android.text.style.URLSpan
 import android.text.style.TypefaceSpan
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -20,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.core.text.HtmlCompat
 import androidx.core.text.getSpans
 import rikka.html.text.HtmlCompat as RikkaHtmlCompat
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
 
 /**
  * The View screens rendered formatted strings through HtmlCompat so link, bold
@@ -28,7 +28,7 @@ import rikka.html.text.HtmlCompat as RikkaHtmlCompat
  */
 @Composable
 fun rememberHtmlText(res: Int, vararg formatArgs: String): AnnotatedString {
-    val linkColor = MaterialTheme.colorScheme.primary
+    val linkColor = appColor(AppColorRole.Primary)
     // The vararg stringResource overload always runs String.format, so an empty
     // argument list crashes on strings that still carry %1\$s (the rish
     // description). Only take the formatting path when arguments were passed.
@@ -37,7 +37,7 @@ fun rememberHtmlText(res: Int, vararg formatArgs: String): AnnotatedString {
 }
 
 fun String.toHtmlAnnotated(linkColor: Color): AnnotatedString {
-    val spanned = HtmlCompat.fromHtml(this, RikkaHtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE) as Spanned
+    val spanned = HtmlCompat.fromHtml(this, RikkaHtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE)
     val builder = AnnotatedString.Builder(spanned.toString())
     spanned.getSpans<URLSpan>(0, spanned.length).forEach { span ->
         builder.addLink(

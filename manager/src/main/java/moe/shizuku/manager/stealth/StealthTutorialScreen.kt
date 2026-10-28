@@ -13,17 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +32,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.R
 import rikka.core.util.ClipboardUtils
+import io.github.magisk317.uikit.surface.AppCircularProgressIndicator
+import io.github.magisk317.uikit.surface.AppExtendedFloatingActionButton
+import io.github.magisk317.uikit.surface.AppFloatingActionButton
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppTextField
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
 
 /**
  * Compose replacement for the stealth tutorial layout: the warning/info cards
@@ -76,57 +78,57 @@ fun StealthTutorialScreen(
                     }
                 },
             ) {
-                Text(
+                AppText(
                     stringResource(R.string.stealth_warning_compatibility),
-                    style = MaterialTheme.typography.bodyMedium,
+                    role = AppTextRole.Body,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
-                Text(
+                AppText(
                     stringResource(R.string.stealth_warning_compatibility_2),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
-                Text(
+                AppText(
                     stringResource(R.string.stealth_warning_compatibility_3),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
             }
 
             WarningCard {
-                Text(
+                AppText(
                     stringResource(R.string.stealth_warning_detection),
-                    style = MaterialTheme.typography.bodyMedium,
+                    role = AppTextRole.Body,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
             }
 
             InfoCard {
-                Text(
+                AppText(
                     stringResource(R.string.stealth_info_reconfigure),
-                    style = MaterialTheme.typography.bodyMedium,
+                    role = AppTextRole.Body,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = appColor(AppColorRole.OnSecondaryContainer),
                 )
-                Text(
+                AppText(
                     stringResource(R.string.stealth_info_rish),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnSecondaryContainer),
                 )
-                Text(
+                AppText(
                     stringResource(R.string.stealth_info_intents),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnSecondaryContainer),
                 )
             }
 
             InfoCard {
-                Text(
+                AppText(
                     stringResource(R.string.stealth_info_update),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnSecondaryContainer),
                 )
             }
         }
@@ -136,24 +138,23 @@ fun StealthTutorialScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .background(appColor(AppColorRole.SurfaceContainerLow))
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                OutlinedTextField(
+                AppTextField(
                     value = packageName,
                     onValueChange = { packageName = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    label = { Text(stringResource(R.string.stealth_package_name)) },
+                    label = stringResource(R.string.stealth_package_name),
                     supportingText = {
                         val text = when {
                             packageName.isNotEmpty() && validationError != null -> stringResource(validationError)
                             else -> stringResource(R.string.stealth_package_name_helper_text)
                         }
-                        Text(text)
+                        AppText(text)
                     },
                     isError = packageName.isNotEmpty() && validationError != null,
-                    shape = RoundedCornerShape(12.dp),
                 )
             }
         }
@@ -167,9 +168,9 @@ fun StealthTutorialScreen(
                 if (fabAction == Action.UNHIDE) R.drawable.ic_visibility_on_filled_24
                 else R.drawable.ic_visibility_off_filled_24
             )
-            ExtendedFloatingActionButton(
-                text = { Text(label) },
-                icon = { Icon(icon, contentDescription = null) },
+            AppExtendedFloatingActionButton(
+                text = label,
+                icon = icon,
                 onClick = {
                     if (validationError == null) onAction(fabAction, packageName.ifEmpty { null })
                 },
@@ -178,14 +179,14 @@ fun StealthTutorialScreen(
                     .padding(end = 20.dp, bottom = if (showInput) 96.dp else 24.dp),
             )
         } else if (busy) {
-            ExtendedFloatingActionButton(
-                text = { Text("") },
-                icon = { CircularProgressIndicator(Modifier.size(20.dp)) },
+            AppFloatingActionButton(
                 onClick = {},
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 20.dp, bottom = if (showInput) 96.dp else 24.dp),
-            )
+            ) {
+                AppCircularProgressIndicator(Modifier.size(20.dp))
+            }
         }
     }
 }
@@ -199,15 +200,15 @@ private fun WarningCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.errorContainer)
+            .background(appColor(AppColorRole.ErrorContainer))
             .clickable(enabled = onClick != null) { onClick?.invoke() }
             .padding(16.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(
+            AppIcon(
                 Icons.Rounded.Warning,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onErrorContainer,
+                tint = appColor(AppColorRole.OnErrorContainer),
             )
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
         }
@@ -220,14 +221,14 @@ private fun InfoCard(content: @Composable () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .background(appColor(AppColorRole.SecondaryContainer))
             .padding(16.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(
+            AppIcon(
                 painterResource(R.drawable.ic_help_outline_24dp),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                tint = appColor(AppColorRole.OnSecondaryContainer),
             )
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { content() }
         }

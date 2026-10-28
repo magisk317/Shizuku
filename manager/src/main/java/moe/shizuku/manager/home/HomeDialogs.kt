@@ -9,17 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +29,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.MainActivity
 import moe.shizuku.manager.R
@@ -48,6 +36,18 @@ import moe.shizuku.manager.ShizukuSettings
 import rikka.core.util.ClipboardUtils
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.utils.UpdateHelper
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
+import io.github.magisk317.uikit.surface.AppSecondaryButton
+import io.github.magisk317.uikit.surface.AppSegmentedOption
+import io.github.magisk317.uikit.surface.AppSingleChoiceSegmentedSelector
+import io.github.magisk317.uikit.surface.AppTextField
 
 private const val SOURCE_CODE_URL = "https://github.com/magisk317/Shizuku"
 
@@ -73,30 +73,30 @@ fun AboutDialogContent(
                     .weight(1f)
                     .padding(start = 24.dp),
             ) {
-                Text(text = stringResource(R.string.app_name), fontSize = 18.sp)
-                Text(text = versionName, fontSize = 14.sp)
+                AppText(text = stringResource(R.string.app_name), fontSize = 18.sp)
+                AppText(text = versionName, role = AppTextRole.Body)
             }
-            IconButton(onClick = onClose, modifier = Modifier.size(24.dp)) {
-                Icon(
+            AppIconButton(onClick = onClose, modifier = Modifier.size(24.dp)) {
+                AppIcon(
                     painter = painterResource(R.drawable.ic_close_24),
                     contentDescription = stringResource(R.string.about_dialog_button_close),
                 )
             }
         }
 
-        Text(
+        AppText(
             text = sourceCodeLink(context),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 14.sp,
+            role = AppTextRole.Body,
+            color = appColor(AppColorRole.OnSurfaceVariant),
             modifier = Modifier.padding(top = 8.dp),
         )
 
-        OutlinedButton(
+        AppSecondaryButton(
             onClick = onUpdate,
             modifier = Modifier.padding(top = 16.dp),
         ) {
-            Icon(painter = painterResource(R.drawable.ic_update_24), contentDescription = null)
-            Text(
+            AppIcon(painter = painterResource(R.drawable.ic_update_24), contentDescription = null)
+            AppText(
                 text = stringResource(R.string.check_for_updates),
                 modifier = Modifier.padding(start = 8.dp),
             )
@@ -156,33 +156,23 @@ fun AutomationSheetContent(
     }
 
     Column(modifier = Modifier.padding(24.dp)) {
-        Text(
+        AppText(
             text = stringResource(R.string.home_automation_bottom_sheet_intents),
-            style = MaterialTheme.typography.titleMedium,
+            role = AppTextRole.Subtitle,
         )
 
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.padding(top = 12.dp)) {
-            SegmentedButton(
-                selected = startChecked,
-                onClick = {
-                    startChecked = true
-                    action = "${BuildConfig.APPLICATION_ID}.START"
-                },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-            ) {
-                Text(stringResource(R.string.start))
-            }
-            SegmentedButton(
-                selected = !startChecked,
-                onClick = {
-                    startChecked = false
-                    action = "${BuildConfig.APPLICATION_ID}.STOP"
-                },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-            ) {
-                Text(stringResource(R.string.stop))
-            }
-        }
+        AppSingleChoiceSegmentedSelector(
+            options = listOf(
+                AppSegmentedOption(true, stringResource(R.string.start)),
+                AppSegmentedOption(false, stringResource(R.string.stop)),
+            ),
+            selected = startChecked,
+            onSelect = {
+                startChecked = it
+                action = if (it) "${BuildConfig.APPLICATION_ID}.START" else "${BuildConfig.APPLICATION_ID}.STOP"
+            },
+            modifier = Modifier.padding(top = 12.dp),
+        )
 
         AutomationField(
             label = stringResource(R.string.home_automation_bottom_sheet_label_action),
@@ -216,27 +206,32 @@ fun AutomationSheetContent(
                 .padding(top = 20.dp),
             horizontalArrangement = Arrangement.End,
         ) {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
-            }
+            AppTextButton(
+                text = stringResource(android.R.string.cancel),
+                onClick = onDismiss,
+            )
         }
     }
 
     if (showRegenerateDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showRegenerateDialog = false },
-            title = { Text(stringResource(R.string.home_automation_regenerate_token)) },
-            text = { Text(stringResource(R.string.home_automation_regenerate_token_message)) },
+            title = { AppText(stringResource(R.string.home_automation_regenerate_token)) },
+            text = { AppText(stringResource(R.string.home_automation_regenerate_token_message)) },
             confirmButton = {
-                TextButton(onClick = {
-                    showRegenerateDialog = false
-                    authToken = ShizukuSettings.generateAuthToken()
-                }) { Text(stringResource(android.R.string.ok)) }
+                AppTextButton(
+                    text = stringResource(android.R.string.ok),
+                    onClick = {
+                        showRegenerateDialog = false
+                        authToken = ShizukuSettings.generateAuthToken()
+                    },
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showRegenerateDialog = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+                AppTextButton(
+                    text = stringResource(android.R.string.cancel),
+                    onClick = { showRegenerateDialog = false },
+                )
             },
         )
     }
@@ -250,26 +245,28 @@ private fun AutomationField(
     modifier: Modifier = Modifier,
     onRegenerate: (() -> Unit)? = null,
 ) {
-    OutlinedTextField(
+    AppTextField(
         value = value,
         onValueChange = {},
         readOnly = true,
-        label = { Text(label) },
+        label = label,
         singleLine = true,
+        // miuix TextField has no leadingIcon slot, so both actions share the
+        // trailing one instead of the field growing a track-specific shape.
         trailingIcon = {
-            IconButton(onClick = onCopy) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_copy),
-                    contentDescription = stringResource(R.string.toast_copied_to_clipboard),
-                )
-            }
-        },
-        leadingIcon = onRegenerate?.let {
-            {
-                IconButton(onClick = it) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_autorenew),
-                        contentDescription = stringResource(R.string.home_automation_regenerate_token),
+            Row {
+                if (onRegenerate != null) {
+                    AppIconButton(onClick = onRegenerate) {
+                        AppIcon(
+                            painter = painterResource(R.drawable.ic_autorenew),
+                            contentDescription = stringResource(R.string.home_automation_regenerate_token),
+                        )
+                    }
+                }
+                AppIconButton(onClick = onCopy) {
+                    AppIcon(
+                        painter = painterResource(R.drawable.ic_copy),
+                        contentDescription = stringResource(R.string.toast_copied_to_clipboard),
                     )
                 }
             }

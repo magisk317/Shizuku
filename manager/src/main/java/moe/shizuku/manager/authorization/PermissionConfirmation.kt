@@ -5,9 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +15,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import moe.shizuku.manager.R
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
 
 @Composable
 fun PermissionConfirmationContent(
@@ -36,18 +37,20 @@ fun PermissionConfirmationContent(
             contentDescription = null,
             modifier = Modifier.size(24.dp),
         )
-        Text(
+        AppText(
             text = title,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = appColor(AppColorRole.OnSurface),
             fontSize = 20.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
         )
-        TextButton(onClick = onAllow, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.grant_dialog_button_allow_always))
-        }
-        TextButton(onClick = onDeny, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.grant_dialog_button_deny))
-        }
+        AppTextButton(
+            text = stringResource(R.string.grant_dialog_button_allow_always),
+            onClick = onAllow, modifier = Modifier.fillMaxWidth(),
+        )
+        AppTextButton(
+            text = stringResource(R.string.grant_dialog_button_deny),
+            onClick = onDeny, modifier = Modifier.fillMaxWidth(),
+        )
     }
 }

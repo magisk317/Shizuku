@@ -14,8 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
@@ -29,6 +27,8 @@ import moe.shizuku.manager.R
 import moe.shizuku.manager.starter.StarterActivity
 import moe.shizuku.manager.utils.SettingsPage
 import moe.shizuku.manager.adb.AdbMdns
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
 
 @RequiresApi(Build.VERSION_CODES.R)
 class AdbDialogFragment : DialogFragment() {
@@ -45,14 +45,14 @@ class AdbDialogFragment : DialogFragment() {
         val content = ComposeView(context).apply {
             setContent {
                 Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-                    Text(
+                    AppText(
                         text = stringResource(R.string.dialog_adb_discovery_message),
-                        style = MaterialTheme.typography.bodyMedium,
+                        role = AppTextRole.Body,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text(
+                    AppText(
                         text = stringResource(R.string.dialog_adb_discovery_message_toggle_wireless_debugging),
-                        style = MaterialTheme.typography.bodyMedium,
+                        role = AppTextRole.Body,
                         fontWeight = FontWeight.Bold,
                     )
                 }

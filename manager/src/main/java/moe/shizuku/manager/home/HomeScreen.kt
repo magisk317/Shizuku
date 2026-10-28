@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,35 +15,24 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircleOutline
 import androidx.compose.material.icons.rounded.ErrorOutline
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.unit.dp
 import rikka.html.text.HtmlCompat
 import io.github.magisk317.uikit.surface.AppCard
@@ -56,6 +44,12 @@ import moe.shizuku.manager.utils.EnvironmentUtils
 import moe.shizuku.manager.utils.UserHandleCompat
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuApiConstants
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
+import io.github.magisk317.uikit.surface.AppPrimaryButton
 
 /**
  * Compose replacement for the home card cluster. The card set and visibility
@@ -156,21 +150,21 @@ private fun StatusCard(status: ServiceStatus) {
         }
     }
 
-    val scheme = MaterialTheme.colorScheme
-    val dark = scheme.surface.luminance() < 0.5f
+    val surface = appColor(AppColorRole.Background)
+    val dark = surface.luminance() < 0.5f
     val accent = if (running) STATUS_RUNNING_ACCENT else STATUS_WARNING_ACCENT
     val container = accent
         .copy(alpha = if (dark) 0.34f else 0.14f)
-        .compositeOver(if (dark) scheme.surfaceContainerHigh else scheme.surfaceContainerLow)
+        .compositeOver(
+            if (dark) appColor(AppColorRole.SurfaceContainerHigh) else appColor(AppColorRole.SurfaceContainerLow),
+        )
 
-    Card(
+    AppCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
-        colors = CardDefaults.cardColors(
-            containerColor = container,
-            contentColor = scheme.onSurface,
-        ),
+        color = container,
+        contentColor = appColor(AppColorRole.OnSurface),
     ) {
         Box {
             // Oversized corner mark, kept from the KernelSU-derived card the kit
@@ -181,7 +175,7 @@ private fun StatusCard(status: ServiceStatus) {
                     .offset(27.dp, 31.dp),
                 contentAlignment = Alignment.BottomEnd,
             ) {
-                Icon(
+                AppIcon(
                     modifier = Modifier.size(110.dp),
                     imageVector = if (running) Icons.Rounded.CheckCircleOutline else Icons.Rounded.ErrorOutline,
                     tint = accent,
@@ -194,20 +188,24 @@ private fun StatusCard(status: ServiceStatus) {
                     .padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text(
+                AppText(
                     text = stringResource(
                         if (running) R.string.home_status_service_is_running else R.string.home_status_service_not_running,
                         appName,
                     ),
-                    fontSize = 22.sp,
+                    role = AppTextRole.Title,
                     fontWeight = FontWeight.SemiBold,
                 )
-                Text(text = badge, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                AppText(
+                    text = badge,
+                    role = AppTextRole.BodyLarge,
+                    fontWeight = FontWeight.Medium,
+                )
                 if (!summary.isNullOrBlank()) {
-                    Text(
+                    AppText(
                         text = summary,
-                        fontSize = 14.sp,
-                        color = scheme.onSurfaceVariant,
+                        role = AppTextRole.Body,
+                        color = appColor(AppColorRole.OnSurfaceVariant),
                     )
                 }
             }
@@ -267,16 +265,16 @@ private fun AdbPermissionLimitedCard(onAdbPermissionHelp: () -> Unit, helpUrl: S
     AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                CardIcon(R.drawable.ic_warning_24, container = MaterialTheme.colorScheme.errorContainer)
-                Text(
+                CardIcon(R.drawable.ic_warning_24, container = appColor(AppColorRole.ErrorContainer))
+                AppText(
                     stringResource(R.string.home_adb_is_limited_title),
-                    style = MaterialTheme.typography.titleMedium,
+                    role = AppTextRole.Subtitle,
                 )
             }
-            Text(
+            AppText(
                 stringResource(R.string.home_adb_is_limited_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
             CardButton(R.string.home_adb_button_view_help, R.drawable.ic_outline_open_in_new_24, onAdbPermissionHelp)
         }
@@ -289,12 +287,12 @@ private fun StartRootCard(restart: Boolean, suiUrl: String, onStartRoot: () -> U
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CardIcon(R.drawable.ic_root_24dp)
-                Text(stringResource(R.string.home_root_title), style = MaterialTheme.typography.titleMedium)
+                AppText(stringResource(R.string.home_root_title), role = AppTextRole.Subtitle)
             }
-            Text(
+            AppText(
                 rememberHtmlText(R.string.home_root_description, suiUrl, "Sui"),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
             if (restart) {
                 CardButton(R.string.home_root_button_restart, R.drawable.ic_server_restart, onStartRoot)
@@ -317,15 +315,15 @@ private fun StartWirelessAdbCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CardIcon(R.drawable.ic_wadb_24)
-                Text(stringResource(R.string.home_wireless_adb_title), style = MaterialTheme.typography.titleMedium)
+                AppText(stringResource(R.string.home_wireless_adb_title), role = AppTextRole.Subtitle)
             }
-            Text(
+            AppText(
                 rememberHtmlText(
                     if (tlsSupported) R.string.home_wireless_adb_description
                     else R.string.home_wireless_adb_description_pre_11
                 ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (tlsSupported) {
@@ -344,12 +342,12 @@ private fun StartAdbCard(helpUrl: String, onViewAdbCommand: () -> Unit) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CardIcon(R.drawable.ic_adb_24dp)
-                Text(stringResource(R.string.home_adb_title), style = MaterialTheme.typography.titleMedium)
+                AppText(stringResource(R.string.home_adb_title), role = AppTextRole.Subtitle)
             }
-            Text(
+            AppText(
                 rememberHtmlText(R.string.home_adb_description, helpUrl),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
             CardButton(R.string.home_adb_button_view_command, R.drawable.ic_code_24dp, onViewAdbCommand)
         }
@@ -367,18 +365,18 @@ private fun AutomationCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CardIcon(R.drawable.ic_integration_instructions_24)
-                Text(stringResource(R.string.home_automation_title), style = MaterialTheme.typography.titleMedium)
+                AppText(stringResource(R.string.home_automation_title), role = AppTextRole.Subtitle)
             }
-            Text(
+            AppText(
                 stringResource(R.string.home_automation_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
             if (restricted) {
-                Text(
+                AppText(
                     rememberHtmlText(R.string.home_automation_description_device_restriction, "adb tcpip 5555"),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnSurfaceVariant),
                 )
             }
             CardButton(R.string.home_automation_button_view_intents, R.drawable.ic_code_24dp, onAutomationSheet)
@@ -412,7 +410,7 @@ private fun LearnMoreCard(onLearnMore: () -> Unit) {
 
 /** The circular icon chip every View-based home card carried. */
 @Composable
-private fun CardIcon(res: Int, container: Color = MaterialTheme.colorScheme.primaryContainer) {
+private fun CardIcon(res: Int, container: Color = appColor(AppColorRole.PrimaryContainer)) {
     Box(
         modifier = Modifier
             .size(32.dp)
@@ -420,21 +418,21 @@ private fun CardIcon(res: Int, container: Color = MaterialTheme.colorScheme.prim
             .background(container),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
+        AppIcon(
             painter = painterResource(res),
             contentDescription = null,
             modifier = Modifier.size(20.dp),
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            tint = appColor(AppColorRole.OnPrimaryContainer),
         )
     }
 }
 
 @Composable
 private fun CardButton(textRes: Int, iconRes: Int, onClick: () -> Unit) {
-    FilledTonalButton(onClick = onClick, colors = ButtonDefaults.filledTonalButtonColors()) {
-        Icon(painterResource(iconRes), contentDescription = null, Modifier.size(18.dp))
+    AppPrimaryButton(onClick = onClick) {
+        AppIcon(painterResource(iconRes), contentDescription = null, Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
-        Text(stringResource(textRes))
+        AppText(stringResource(textRes))
     }
 }
 

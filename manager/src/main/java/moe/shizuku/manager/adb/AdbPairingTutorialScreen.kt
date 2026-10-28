@@ -12,14 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
@@ -28,6 +22,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.R
 import rikka.compatibility.DeviceCompatibility
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
+import io.github.magisk317.uikit.surface.AppPrimaryButton
 
 /**
  * Compose replacement for the pairing tutorial scroll. Which cards show is
@@ -52,40 +52,38 @@ fun AdbPairingTutorialScreen(
     ) {
         if (notificationEnabled) {
             TutorialCard(
-                container = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                container = appColor(AppColorRole.SecondaryContainer),
+                contentColor = appColor(AppColorRole.OnSecondaryContainer),
                 iconRes = R.drawable.ic_outline_notifications_active_24,
             ) {
-                Text(
+                AppText(
                     stringResource(R.string.adb_pairing_tutorial_content_notification),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnSecondaryContainer),
                 )
             }
         } else {
             TutorialCard(
-                container = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                container = appColor(AppColorRole.ErrorContainer),
+                contentColor = appColor(AppColorRole.OnErrorContainer),
                 iconRes = R.drawable.ic_outline_info_24,
             ) {
-                Text(
+                AppText(
                     stringResource(R.string.adb_pairing_tutorial_content_notification_blocked),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
-                FilledTonalButton(
+                AppPrimaryButton(
                     onClick = onNotificationSettings,
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError,
-                    ),
+                    containerColor = appColor(AppColorRole.Error),
+                    contentColor = appColor(AppColorRole.OnError),
                 ) {
-                    Icon(
+                    AppIcon(
                         painterResource(R.drawable.ic_outline_open_in_new_24),
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                     )
-                    Text(
+                    AppText(
                         stringResource(R.string.notification_settings),
                         modifier = Modifier.padding(start = 8.dp),
                     )
@@ -94,71 +92,71 @@ fun AdbPairingTutorialScreen(
         }
 
         TutorialCard(
-            container = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            container = appColor(AppColorRole.SecondaryContainer),
+            contentColor = appColor(AppColorRole.OnSecondaryContainer),
             iconRes = R.drawable.ic_help_outline_24dp,
         ) {
-            Text(
+            AppText(
                 stringResource(R.string.adb_pairing_tutorial_content_network),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSecondaryContainer),
             )
-            Text(
+            AppText(
                 stringResource(R.string.adb_pairing_tutorial_content_network_limation_not_foreground),
-                style = MaterialTheme.typography.bodyMedium,
+                role = AppTextRole.Body,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                color = appColor(AppColorRole.OnSecondaryContainer),
             )
         }
 
         if (isMiui) {
             TutorialCard(
-                container = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                container = appColor(AppColorRole.ErrorContainer),
+                contentColor = appColor(AppColorRole.OnErrorContainer),
                 iconRes = R.drawable.ic_warning_24,
             ) {
-                Text(
+                AppText(
                     stringResource(R.string.adb_pairing_tutorial_content_miui),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
-                Text(
+                AppText(
                     stringResource(R.string.adb_pairing_tutorial_content_miui_2),
-                    style = MaterialTheme.typography.bodyMedium,
+                    role = AppTextRole.Body,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
             }
         }
 
         if (notificationEnabled) {
             StepRow(stepIcon = R.drawable.ic_numeric_1_circle_outline_24) {
-                Text(
+                AppText(
                     stringResource(R.string.adb_pairing_tutorial_content_steps),
-                    style = MaterialTheme.typography.bodyLarge,
+                    role = AppTextRole.BodyLarge,
                 )
-                FilledTonalButton(onClick = onDeveloperOptions) {
-                    Icon(
+                AppPrimaryButton(onClick = onDeveloperOptions) {
+                    AppIcon(
                         painterResource(R.drawable.ic_outline_open_in_new_24),
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                     )
-                    Text(
+                    AppText(
                         stringResource(R.string.development_settings),
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
             }
             StepRow(stepIcon = R.drawable.ic_numeric_2_circle_outline_24) {
-                Text(
+                AppText(
                     stringResource(R.string.adb_pairing_tutorial_content_enter_pairing_code),
-                    style = MaterialTheme.typography.bodyLarge,
+                    role = AppTextRole.BodyLarge,
                 )
             }
             StepRow(stepIcon = R.drawable.ic_numeric_3_circle_outline_24) {
-                Text(
+                AppText(
                     stringResource(R.string.adb_pairing_tutorial_content_finish),
-                    style = MaterialTheme.typography.bodyLarge,
+                    role = AppTextRole.BodyLarge,
                 )
             }
         }
@@ -180,7 +178,7 @@ private fun TutorialCard(
             .padding(16.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(
+            AppIcon(
                 painterResource(iconRes),
                 contentDescription = null,
                 tint = contentColor,
@@ -196,13 +194,13 @@ private fun StepRow(
     content: @Composable () -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        Icon(
+        AppIcon(
             painterResource(stepIcon),
             contentDescription = null,
             modifier = Modifier
                 .size(32.dp)
                 .padding(4.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = appColor(AppColorRole.OnSurfaceVariant),
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             content()

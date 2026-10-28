@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
@@ -45,6 +43,10 @@ import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
+import io.github.magisk317.uikit.text.AppTextRole
 
 private class NotRootedException: Exception()
 
@@ -69,11 +71,11 @@ class StarterActivity : AppBarActivity() {
                             .verticalScroll(rememberScrollState())
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                     ) {
-                        Text(
+                        AppText(
                             text = output,
+                            role = AppTextRole.BodySmall,
                             fontFamily = FontFamily.Monospace,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = appColor(AppColorRole.OnSurface),
                         )
                     }
                 }

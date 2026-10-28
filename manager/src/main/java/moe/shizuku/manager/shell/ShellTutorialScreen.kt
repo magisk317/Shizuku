@@ -13,13 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
@@ -30,6 +25,12 @@ import androidx.compose.ui.unit.dp
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ktx.rememberHtmlText
 import rikka.compatibility.DeviceCompatibility
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
+import io.github.magisk317.uikit.surface.AppPrimaryButton
 
 private const val SH_NAME = "rish"
 private const val DEX_NAME = "rish_shizuku.dex"
@@ -59,64 +60,64 @@ fun ShellTutorialScreen(
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         TutorialCard(
-            container = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            container = appColor(AppColorRole.SecondaryContainer),
+            contentColor = appColor(AppColorRole.OnSecondaryContainer),
             iconRes = R.drawable.ic_help_outline_24dp,
             onClick = onOpenRishDocs,
         ) {
-            Text(
+            AppText(
                 rememberHtmlText(R.string.rish_description, SH_MONO),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSecondaryContainer),
             )
         }
 
         if (isMiui) {
             TutorialCard(
-                container = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                container = appColor(AppColorRole.ErrorContainer),
+                contentColor = appColor(AppColorRole.OnErrorContainer),
                 iconRes = R.drawable.ic_warning_24,
             ) {
-                Text(
+                AppText(
                     stringResource(R.string.terminal_tutorial_miui),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
-                Text(
+                AppText(
                     stringResource(R.string.terminal_tutorial_miui_2),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    role = AppTextRole.Body,
+                    color = appColor(AppColorRole.OnErrorContainer),
                 )
             }
         }
 
         StepRow(stepIcon = R.drawable.ic_numeric_1_circle_outline_24) {
-            Text(stringResource(R.string.terminal_tutorial_1), style = MaterialTheme.typography.bodyLarge)
-            Text(
+            AppText(stringResource(R.string.terminal_tutorial_1), role = AppTextRole.BodyLarge)
+            AppText(
                 rememberHtmlText(R.string.terminal_tutorial_1_description, SH_MONO, DEX_MONO),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
-            FilledTonalButton(onClick = onExportFiles) {
-                Text(stringResource(R.string.terminal_export_files))
+            AppPrimaryButton(onClick = onExportFiles) {
+                AppText(stringResource(R.string.terminal_export_files))
             }
         }
 
         StepRow(stepIcon = R.drawable.ic_numeric_2_circle_outline_24) {
-            Text(
+            AppText(
                 rememberHtmlText(R.string.terminal_tutorial_2, SH_MONO),
-                style = MaterialTheme.typography.bodyLarge,
+                role = AppTextRole.BodyLarge,
             )
             SelectableCommand(COPY_COMMAND)
-            Text(
+            AppText(
                 rememberHtmlText(R.string.terminal_tutorial_2_description, SH_MONO, SH_MONO, ".bashrc"),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
         }
 
         StepRow(stepIcon = R.drawable.ic_numeric_3_circle_outline_24) {
-            Text(stringResource(R.string.terminal_tutorial_3), style = MaterialTheme.typography.bodyLarge)
+            AppText(stringResource(R.string.terminal_tutorial_3), role = AppTextRole.BodyLarge)
             SelectableCommand(RUN_COMMAND)
         }
     }
@@ -129,13 +130,13 @@ private fun StepRow(
     content: @Composable () -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        Icon(
+        AppIcon(
             painterResource(stepIcon),
             contentDescription = null,
             modifier = Modifier
                 .size(32.dp)
                 .padding(4.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = appColor(AppColorRole.OnSurfaceVariant),
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             content()
@@ -160,7 +161,7 @@ private fun TutorialCard(
             .padding(16.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(
+            AppIcon(
                 painterResource(iconRes),
                 contentDescription = null,
                 tint = contentColor,
@@ -173,11 +174,11 @@ private fun TutorialCard(
 @Composable
 private fun SelectableCommand(command: String) {
     SelectionContainer {
-        Text(
+        AppText(
             command,
-            style = MaterialTheme.typography.bodyMedium,
+            role = AppTextRole.Body,
             fontFamily = FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = appColor(AppColorRole.OnSurfaceVariant),
         )
     }
 }

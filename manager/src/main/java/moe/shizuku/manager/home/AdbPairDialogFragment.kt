@@ -13,10 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,6 +49,11 @@ import moe.shizuku.manager.adb.AdbMdns
 import moe.shizuku.manager.adb.AdbPairingClient
 import moe.shizuku.manager.adb.PreferenceAdbKeyStore
 import moe.shizuku.manager.utils.SettingsHelper
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
+import androidx.compose.ui.text.TextStyle
+import io.github.magisk317.uikit.surface.AppTextField
 
 @RequiresApi(VERSION_CODES.R)
 class AdbPairDialogFragment : DialogFragment() {
@@ -129,43 +130,43 @@ private fun AdbPairDialogContent(
     }
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-        Text(
+        AppText(
             text = stringResource(
                 if (discovering) R.string.dialog_adb_pairing_discovery else R.string.dialog_adb_pairing_title
             ),
-            style = MaterialTheme.typography.headlineSmall,
+            role = AppTextRole.Title,
         )
 
         if (!discovering) {
-            Text(
+            AppText(
                 text = stringResource(
                     if (multiWindow) R.string.dialog_adb_pairing_message
                     else R.string.adb_pairing_requires_multi_window
                 ),
-                style = MaterialTheme.typography.bodyMedium,
+                role = AppTextRole.Body,
                 modifier = Modifier.padding(top = 12.dp),
             )
             if (!multiWindow) {
-                Text(
+                AppText(
                     text = stringResource(R.string.adb_pairing_requires_multi_window_reason),
-                    style = MaterialTheme.typography.bodyMedium,
+                    role = AppTextRole.Body,
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
         }
 
         if (!discovering) {
-            OutlinedTextField(
+            AppTextField(
                 value = pairingCode,
                 onValueChange = {
                     pairingCode = it.filter { ch -> ch.isDigit() }.take(6)
                     codeError = null
                 },
-                label = { Text(stringResource(R.string.dialog_adb_pairing_paring_code)) },
+                label = stringResource(R.string.dialog_adb_pairing_paring_code),
                 singleLine = true,
                 isError = codeError != null,
-                supportingText = codeError?.let { { Text(it) } },
-                textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                supportingText = codeError?.let { { AppText(it) } },
+                textStyle = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Medium),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -174,16 +175,16 @@ private fun AdbPairDialogContent(
         }
 
         if (portError != null) {
-            OutlinedTextField(
+            AppTextField(
                 value = portText,
                 onValueChange = {
                     portText = it.filter { ch -> ch.isDigit() }.take(5)
                     portError = null
                 },
-                label = { Text(stringResource(R.string.dialog_adb_port)) },
+                label = stringResource(R.string.dialog_adb_port),
                 singleLine = true,
                 isError = true,
-                supportingText = { Text(portError!!) },
+                supportingText = { AppText(portError!!) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -197,25 +198,28 @@ private fun AdbPairDialogContent(
                 .padding(top = 20.dp),
             horizontalArrangement = Arrangement.End,
         ) {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
-            }
+            AppTextButton(
+                text = stringResource(android.R.string.cancel),
+                onClick = onDismiss,
+            )
             if (discovering) {
-                TextButton(onClick = onOpenDevelopmentSettings) {
-                    Text(stringResource(R.string.development_settings))
-                }
+                AppTextButton(
+                    text = stringResource(R.string.development_settings),
+                    onClick = onOpenDevelopmentSettings,
+                )
             }
             if (canPair) {
-                TextButton(onClick = {
-                    val port = portText.toIntOrNull()
-                    if (port == null || port > 65535 || port < 1) {
-                        portError = context.getString(R.string.dialog_adb_invalid_port)
-                        return@TextButton
-                    }
-                    viewModel.run(port, pairingCode)
-                }) {
-                    Text(stringResource(android.R.string.ok))
-                }
+                AppTextButton(
+                    text = stringResource(android.R.string.ok),
+                    onClick = {
+                        val port = portText.toIntOrNull()
+                        if (port == null || port > 65535 || port < 1) {
+                            portError = context.getString(R.string.dialog_adb_invalid_port)
+                            return@AppTextButton
+                        }
+                        viewModel.run(port, pairingCode)
+                    },
+                )
             }
         }
     }

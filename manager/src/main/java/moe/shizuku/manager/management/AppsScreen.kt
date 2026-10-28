@@ -12,15 +12,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,6 +36,13 @@ import moe.shizuku.manager.authorization.AuthorizationManager
 import moe.shizuku.manager.utils.AppIconCache
 import moe.shizuku.manager.utils.ShizukuSystemApis
 import moe.shizuku.manager.utils.UserHandleCompat
+import io.github.magisk317.uikit.preference.AppSwitch
+import io.github.magisk317.uikit.surface.AppHorizontalDivider
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
 
 /**
  * Compose replacement for the authorized-apps list: the toggle-all header, the
@@ -59,10 +61,10 @@ fun AppsScreen(
     when {
         packages == null -> Box(Modifier.fillMaxSize())
         packages.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
+            AppText(
                 stringResource(R.string.home_app_management_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.Body,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
         }
         else -> LazyColumn(Modifier.fillMaxSize()) {
@@ -71,9 +73,9 @@ fun AppsScreen(
             }
             items(packages, key = { it.packageName }) { pi ->
                 AppRow(pi, revision, onToggle)
-                HorizontalDivider(
+                AppHorizontalDivider(
                     Modifier.padding(horizontal = 16.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    color = appColor(AppColorRole.OutlineVariant).copy(alpha = 0.4f),
                 )
             }
         }
@@ -89,12 +91,12 @@ private fun ToggleAllRow(revision: Int, onToggleAll: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
+        AppText(
             stringResource(R.string.app_management_toggle_all),
-            style = MaterialTheme.typography.bodyLarge,
+            role = AppTextRole.BodyLarge,
             modifier = Modifier.weight(1f),
         )
-        Switch(checked = allEnabled, onCheckedChange = { onToggleAll() })
+        AppSwitch(checked = allEnabled, onCheckedChange = { onToggleAll() })
     }
 }
 
@@ -118,21 +120,21 @@ private fun AppRow(pi: PackageInfo, revision: Int, onToggle: (PackageInfo) -> Un
     ) {
         AppIcon(ai)
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(
+            AppText(title, role = AppTextRole.BodyLarge)
+            AppText(
                 ai.packageName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                role = AppTextRole.BodySmall,
+                color = appColor(AppColorRole.OnSurfaceVariant),
             )
             if (requiresRoot) {
-                Text(
+                AppText(
                     stringResource(R.string.app_management_item_summary_requires_root),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    role = AppTextRole.BodySmall,
+                    color = appColor(AppColorRole.Primary),
                 )
             }
         }
-        Switch(checked = checked, onCheckedChange = { onToggle(pi) })
+        AppSwitch(checked = checked, onCheckedChange = { onToggle(pi) })
     }
 }
 

@@ -11,12 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -37,6 +32,9 @@ import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.worker.AdbStartWorker
+import io.github.magisk317.uikit.surface.AppHorizontalDivider
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
 
 class BugReportDialog : DialogFragment() {
 
@@ -113,22 +111,22 @@ private fun BugReportContent() {
     val methodText = stringResource(R.string.bug_report_dialog_method).replace("^1", "GitHub")
 
     Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
-        Text(
+        AppText(
             text = stringResource(R.string.bug_report_dialog_before_reporting),
-            style = MaterialTheme.typography.titleMedium,
+            role = AppTextRole.Subtitle,
         )
-        Text(text = updateLink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
-        Text(text = wikiLink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
-        Text(text = issuesLink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        Text(
+        AppText(text = updateLink, role = AppTextRole.Body, modifier = Modifier.padding(top = 8.dp))
+        AppText(text = wikiLink, role = AppTextRole.Body, modifier = Modifier.padding(top = 8.dp))
+        AppText(text = issuesLink, role = AppTextRole.Body, modifier = Modifier.padding(top = 8.dp))
+        AppHorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        AppText(
             text = methodText,
-            style = MaterialTheme.typography.bodyMedium,
+            role = AppTextRole.Body,
             fontWeight = FontWeight.Bold,
         )
-        Text(
+        AppText(
             text = stringResource(R.string.bug_report_dialog_method_2),
-            style = MaterialTheme.typography.bodyMedium,
+            role = AppTextRole.Body,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 8.dp),
         )

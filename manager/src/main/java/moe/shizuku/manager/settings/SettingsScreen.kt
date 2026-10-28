@@ -13,10 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -54,6 +50,11 @@ import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.core.util.ResourceUtils
 import rikka.material.app.LocaleDelegate
 import rikka.shizuku.manager.ShizukuLocales
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.surface.AppTextField
+import io.github.magisk317.uikit.text.AppText
+import androidx.compose.foundation.layout.Row
 
 /**
  * Compose replacement for SettingsFragment.
@@ -365,112 +366,130 @@ fun SettingsScreen(
     }
 
     if (showRestartDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showRestartDialog = false },
-            title = { Text(stringResource(R.string.settings_restart_dialog_title)) },
+            title = { AppText(stringResource(R.string.settings_restart_dialog_title)) },
             text = {
-                Text(
+                AppText(
                     stringResource(R.string.settings_restart_dialog_message) + " " +
                         stringResource(R.string.settings_restart_dialog_message_wifi_required)
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showRestartDialog = false
-                    pendingTcpPort?.let { repository.setTcpPort(it) }
-                    pendingTcpPort = null
-                    ShizukuReceiverStarter.start(context, true)
-                }) { Text(stringResource(android.R.string.ok)) }
+                AppTextButton(
+                    text = stringResource(android.R.string.ok),
+                    onClick = {
+                        showRestartDialog = false
+                        pendingTcpPort?.let { repository.setTcpPort(it) }
+                        pendingTcpPort = null
+                        ShizukuReceiverStarter.start(context, true)
+                    },
+                )
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showRestartDialog = false
-                    pendingTcpPort = null
-                }) { Text(stringResource(android.R.string.cancel)) }
+                AppTextButton(
+                    text = stringResource(android.R.string.cancel),
+                    onClick = {
+                        showRestartDialog = false
+                        pendingTcpPort = null
+                    },
+                )
             },
         )
     }
 
     if (showStopTcpDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showStopTcpDialog = false },
-            title = { Text(stringResource(android.R.string.dialog_alert_title)) },
-            text = { Text(stringResource(R.string.settings_tcp_mode_dialog_close_port)) },
+            title = { AppText(stringResource(android.R.string.dialog_alert_title)) },
+            text = { AppText(stringResource(R.string.settings_tcp_mode_dialog_close_port)) },
             confirmButton = {
-                TextButton(onClick = {
-                    showStopTcpDialog = false
-                    scope.launch {
-                        AdbStarter.stopTcp(context, EnvironmentUtils.getAdbTcpPort())
-                        if (EnvironmentUtils.getAdbTcpPort() <= 0) repository.setTcpMode(false)
-                    }
-                }) { Text(stringResource(android.R.string.ok)) }
+                AppTextButton(
+                    text = stringResource(android.R.string.ok),
+                    onClick = {
+                        showStopTcpDialog = false
+                        scope.launch {
+                            AdbStarter.stopTcp(context, EnvironmentUtils.getAdbTcpPort())
+                            if (EnvironmentUtils.getAdbTcpPort() <= 0) repository.setTcpMode(false)
+                        }
+                    },
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showStopTcpDialog = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+                AppTextButton(
+                    text = stringResource(android.R.string.cancel),
+                    onClick = { showStopTcpDialog = false },
+                )
             },
         )
     }
 
     if (showStartOnBootBugDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showStartOnBootBugDialog = false },
-            title = { Text(stringResource(android.R.string.dialog_alert_title)) },
-            text = { Text(stringResource(R.string.settings_start_on_boot_bug)) },
+            title = { AppText(stringResource(android.R.string.dialog_alert_title)) },
+            text = { AppText(stringResource(R.string.settings_start_on_boot_bug)) },
             confirmButton = {
-                TextButton(onClick = {
-                    showStartOnBootBugDialog = false
-                    scope.launch {
-                        if (maybeToggleBatterySensitiveSetting(true)) {
-                            repository.setStartOnBoot(true)
+                AppTextButton(
+                    text = stringResource(android.R.string.ok),
+                    onClick = {
+                        showStartOnBootBugDialog = false
+                        scope.launch {
+                            if (maybeToggleBatterySensitiveSetting(true)) {
+                                repository.setStartOnBoot(true)
+                            }
                         }
-                    }
-                }) { Text(stringResource(android.R.string.ok)) }
+                    },
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showStartOnBootBugDialog = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+                AppTextButton(
+                    text = stringResource(android.R.string.cancel),
+                    onClick = { showStartOnBootBugDialog = false },
+                )
             },
         )
     }
 
     if (showTcpPortDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showTcpPortDialog = false },
-            title = { Text(stringResource(R.string.settings_tcp_port)) },
+            title = { AppText(stringResource(R.string.settings_tcp_port)) },
             text = {
-                OutlinedTextField(
+                AppTextField(
                     value = tcpPortDraft,
                     onValueChange = { tcpPortDraft = it.filter { ch -> ch.isDigit() } },
                     singleLine = true,
-                    placeholder = { Text(stringResource(R.string.settings_tcp_port_hint)) },
+                    placeholderText = stringResource(R.string.settings_tcp_port_hint),
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showTcpPortDialog = false
-                    val port = tcpPortDraft.toIntOrNull()
-                    when {
-                        port != null && port !in 1..65535 -> activity?.window?.decorView?.let {
-                            SnackbarHelper.show(context, it, context.getString(R.string.snackbar_invalid_port))
+                AppTextButton(
+                    text = stringResource(android.R.string.ok),
+                    onClick = {
+                        showTcpPortDialog = false
+                        val port = tcpPortDraft.toIntOrNull()
+                        when {
+                            port != null && port !in 1..65535 -> activity?.window?.decorView?.let {
+                                SnackbarHelper.show(context, it, context.getString(R.string.snackbar_invalid_port))
+                            }
+                            ShizukuStateMachine.isRunning() && repository.needsTcpPortRestart(port ?: 5555) -> {
+                                pendingTcpPort = port
+                                showRestartDialog = true
+                            }
+                            else -> {
+                                repository.setTcpPort(port)
+                                context.sendBroadcast(Intent(context, NotifCancelReceiver::class.java))
+                            }
                         }
-                        ShizukuStateMachine.isRunning() && repository.needsTcpPortRestart(port ?: 5555) -> {
-                            pendingTcpPort = port
-                            showRestartDialog = true
-                        }
-                        else -> {
-                            repository.setTcpPort(port)
-                            context.sendBroadcast(Intent(context, NotifCancelReceiver::class.java))
-                        }
-                    }
-                }) { Text(stringResource(android.R.string.ok)) }
+                    },
+                )
             },
             dismissButton = {
-                TextButton(onClick = { showTcpPortDialog = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
+                AppTextButton(
+                    text = stringResource(android.R.string.cancel),
+                    onClick = { showTcpPortDialog = false },
+                )
             },
         )
     }
