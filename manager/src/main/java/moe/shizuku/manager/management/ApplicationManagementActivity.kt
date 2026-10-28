@@ -2,41 +2,51 @@ package moe.shizuku.manager.management
 
 import android.content.pm.PackageInfo
 import android.os.Bundle
-import android.text.method.LinkMovementMethod
-import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.ComposeView
-import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
-import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import java.util.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppScaffold
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.surface.AppTopBar
+import io.github.magisk317.uikit.text.AppText
+import java.util.Objects
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
-import moe.shizuku.manager.app.AppBarActivity
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
 import moe.shizuku.manager.authorization.AuthorizationManager
-import moe.shizuku.manager.ktx.toHtml
+import moe.shizuku.manager.ktx.activityTitle
+import moe.shizuku.manager.ktx.rememberHtmlText
 import moe.shizuku.manager.utils.ShizukuStateMachine
-import rikka.html.text.HtmlCompat
 import rikka.lifecycle.Status
 import rikka.shizuku.Shizuku
-import android.view.ViewGroup
 
-class ApplicationManagementActivity : AppBarActivity() {
+class ApplicationManagementActivity : ComponentActivity() {
 
     private val viewModel: AppsViewModel by viewModels()
 
     private var revision by mutableIntStateOf(0)
+
+    // Set when a grant/revoke is rejected because the service is running as adb rather than
+    // root; the explanation is a Compose dialog now, so the flag drives it directly.
+    private var showAdbLimited by mutableStateOf(false)
 
     private val stateListener: (ShizukuStateMachine.State) -> Unit = {
         if (ShizukuStateMachine.isDead() && !isFinishing)
@@ -51,8 +61,6 @@ class ApplicationManagementActivity : AppBarActivity() {
             return
         }
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
         viewModel.packages.observe(this) {
             if (it.status == Status.ERROR) {
                 finish()
@@ -63,34 +71,71 @@ class ApplicationManagementActivity : AppBarActivity() {
         }
         viewModel.load()
 
-        // The content must carry the scrolling-view behaviour like every View-based
-        // child of the CoordinatorLayout root, or it renders from under the toolbar.
-        val params = CoordinatorLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
+        setContent {
+            val packages by viewModel.packages.asFlow()
+                .collectAsStateWithLifecycle(initialValue = null)
 
-        setContentView(ComposeView(this).apply {
-            setContent {
-                val packages by viewModel.packages.asFlow()
-                    .collectAsStateWithLifecycle(initialValue = null)
-
-                ShizukuTheme(
-                    nightMode = ShizukuSettings.getNightMode(),
-                    blackNightTheme = ThemeHelper.isBlackNightTheme(this@ApplicationManagementActivity),
-                    useSystemColor = ThemeHelper.isUsingSystemColor(),
+            ShizukuTheme(
+                nightMode = ShizukuSettings.getNightMode(),
+                blackNightTheme = ThemeHelper.isBlackNightTheme(this@ApplicationManagementActivity),
+                useSystemColor = ThemeHelper.isUsingSystemColor(),
+            ) {
+                val navController = rememberNavController()
+                AppScaffold(
+                    topBar = {
+                        AppTopBar(
+                            title = this@ApplicationManagementActivity.activityTitle(),
+                            navigationIcon = {
+                                AppIconButton(onClick = { this@ApplicationManagementActivity.finish() }) {
+                                    AppIcon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = stringResource(
+                                            androidx.appcompat.R.string.abc_action_bar_up_description,
+                                        ),
+                                    )
+                                }
+                            },
+                        )
+                    },
                 ) {
-                    AppsScreen(
-                        packages = packages?.data,
-                        revision = revision,
-                        onToggle = { pi -> toggle(pi) },
-                        onToggleAll = { toggleAll() },
-                    )
+                    NavHost(navController = navController, startDestination = "apps") {
+                        composable("apps") {
+                            AppsScreen(
+                                packages = packages?.data,
+                                revision = revision,
+                                onToggle = { pi -> toggle(pi) },
+                                onToggleAll = { toggleAll() },
+                            )
+                        }
+                    }
+                }
+
+                if (showAdbLimited) {
+                    AppAdbLimitedDialog(onDismiss = { showAdbLimited = false })
                 }
             }
-        }, params)
+        }
 
         ShizukuStateMachine.addListener(stateListener)
+    }
+
+    @androidx.compose.runtime.Composable
+    private fun AppAdbLimitedDialog(onDismiss: () -> Unit) {
+        val message = rememberHtmlText(
+            R.string.app_management_dialog_adb_is_limited_message,
+            Helps.ADB.get(),
+        )
+        AppAlertDialog(
+            onDismissRequest = onDismiss,
+            title = { AppText(stringResource(R.string.app_management_dialog_adb_is_limited_title)) },
+            text = { AppText(message) },
+            confirmButton = {
+                AppTextButton(
+                    text = stringResource(android.R.string.ok),
+                    onClick = onDismiss,
+                )
+            },
+        )
     }
 
     private fun toggle(pi: PackageInfo) {
@@ -108,7 +153,7 @@ class ApplicationManagementActivity : AppBarActivity() {
                 null
             }
             if (uid0 != null && uid0 != 0) {
-                showAdbLimitedDialog()
+                showAdbLimited = true
             }
         }
         viewModel.load(true)
@@ -132,25 +177,6 @@ class ApplicationManagementActivity : AppBarActivity() {
         }
         viewModel.load(true)
         revision++
-    }
-
-    private fun showAdbLimitedDialog() {
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.app_management_dialog_adb_is_limited_title)
-            .setMessage(
-                getString(R.string.app_management_dialog_adb_is_limited_message, Helps.ADB.get())
-                    .toHtml(HtmlCompat.FROM_HTML_OPTION_TRIM_WHITESPACE)
-            )
-            .setPositiveButton(android.R.string.ok, null)
-            .create()
-        dialog.setOnShowListener {
-            (it as AlertDialog).findViewById<TextView>(android.R.id.message)?.movementMethod =
-                LinkMovementMethod.getInstance()
-        }
-        try {
-            dialog.show()
-        } catch (ignored: Throwable) {
-        }
     }
 
     override fun onDestroy() {
