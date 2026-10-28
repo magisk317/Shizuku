@@ -12,7 +12,7 @@ cmake = "4.1.2"
 ndk = "30.0.16248370"
 
 # --- Release versioning ---
-versionName = "13.7.0"
+versionName = "13.7.1"
 
 # --- Rikka build plugins ---
 refine = "4.4.0"
