@@ -10,6 +10,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircleOutline
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,7 +49,6 @@ import androidx.compose.ui.unit.dp
 import rikka.html.text.HtmlCompat
 import io.github.magisk317.uikit.surface.AppCard
 import io.github.magisk317.uikit.surface.AppListItem
-import io.github.magisk317.uikit.surface.MiuixStatusCheckCard
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ktx.rememberHtmlText
 import moe.shizuku.manager.model.ServiceStatus
@@ -145,16 +156,70 @@ private fun StatusCard(status: ServiceStatus) {
         }
     }
 
-    MiuixStatusCheckCard(
-        passed = running,
-        title = stringResource(
-            if (running) R.string.home_status_service_is_running else R.string.home_status_service_not_running,
-            appName,
+    val scheme = MaterialTheme.colorScheme
+    val dark = scheme.surface.luminance() < 0.5f
+    val accent = if (running) STATUS_RUNNING_ACCENT else STATUS_WARNING_ACCENT
+    val container = accent
+        .copy(alpha = if (dark) 0.34f else 0.14f)
+        .compositeOver(if (dark) scheme.surfaceContainerHigh else scheme.surfaceContainerLow)
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
+        colors = CardDefaults.cardColors(
+            containerColor = container,
+            contentColor = scheme.onSurface,
         ),
-        badge = badge,
-        summary = summary,
-    )
+    ) {
+        Box {
+            // Oversized corner mark, kept from the KernelSU-derived card the kit
+            // shipped, offset past the bounds so it is clipped into the corner.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .offset(27.dp, 31.dp),
+                contentAlignment = Alignment.BottomEnd,
+            ) {
+                Icon(
+                    modifier = Modifier.size(110.dp),
+                    imageVector = if (running) Icons.Rounded.CheckCircleOutline else Icons.Rounded.ErrorOutline,
+                    tint = accent,
+                    contentDescription = null,
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = stringResource(
+                        if (running) R.string.home_status_service_is_running else R.string.home_status_service_not_running,
+                        appName,
+                    ),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(text = badge, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                if (!summary.isNullOrBlank()) {
+                    Text(
+                        text = summary,
+                        fontSize = 14.sp,
+                        color = scheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
 }
+
+// Semantic status accents. Only the tint is fixed; the container is a low-alpha
+// wash of it over a themed surface, so light and dark both stay legible and the
+// text keeps reading the scheme's onSurface.
+private val STATUS_RUNNING_ACCENT = Color(0xFF36D167)
+private val STATUS_WARNING_ACCENT = Color(0xFFF5A623)
 
 @Composable
 private fun ManageAppsCard(running: Boolean, grantedCount: Int, onManageApps: () -> Unit) {
