@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import androidx.activity.ComponentActivity
 import androidx.annotation.MainThread
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

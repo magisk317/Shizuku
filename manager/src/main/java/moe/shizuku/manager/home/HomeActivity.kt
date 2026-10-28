@@ -11,10 +11,10 @@ import android.provider.Settings
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,16 +32,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import io.github.magisk317.uikit.common.AppSnackbarDuration
@@ -48,6 +48,10 @@ import io.github.magisk317.uikit.common.AppSnackbarResult
 import io.github.magisk317.uikit.common.showLatestSnackbar
 import io.github.magisk317.uikit.surface.AppAlertDialog
 import io.github.magisk317.uikit.surface.AppBottomSheet
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppListPopup
+import io.github.magisk317.uikit.surface.AppListPopupItem
 import io.github.magisk317.uikit.surface.AppTextButton
 import io.github.magisk317.uikit.surface.ConfirmActionDialog
 import io.github.magisk317.uikit.text.AppText
@@ -64,9 +68,11 @@ import moe.shizuku.manager.adb.AdbMdns
 import moe.shizuku.manager.adb.AdbPairingService
 import moe.shizuku.manager.adb.AdbPairingTutorialActivity
 import moe.shizuku.manager.adb.AdbStarter
-import moe.shizuku.manager.app.AppBarActivity
+import moe.shizuku.manager.app.AppPageScaffold
 import moe.shizuku.manager.app.ShizukuTheme
 import moe.shizuku.manager.app.ThemeHelper
+import moe.shizuku.manager.home.AdbPairDialogContent
+import moe.shizuku.manager.ktx.activityTitle
 import moe.shizuku.manager.ktx.rememberHtmlText
 import moe.shizuku.manager.ktx.toHtml
 import moe.shizuku.manager.management.ApplicationManagementActivity
@@ -90,9 +96,10 @@ import rikka.html.text.HtmlCompat
 import rikka.lifecycle.Status
 import rikka.shizuku.Shizuku
 
-abstract class HomeActivity : AppBarActivity() {
+abstract class HomeActivity : ComponentActivity() {
 
     private val homeModel: HomeViewModel by viewModels()
+    private val adbPairModel: AdbPairViewModel by viewModels()
     private val appsModel: AppsViewModel by viewModels()
 
     private var wadbEnableUsbDebugging by mutableStateOf(false)
@@ -107,6 +114,8 @@ abstract class HomeActivity : AppBarActivity() {
     private var batterySnackbar by mutableStateOf(false)
     private var updateSnackbar by mutableStateOf(false)
     private val snackbarHostState = AppSnackbarHostState()
+    private var overflowMenu by mutableStateOf(false)
+    private var adbPairing by mutableStateOf(false)
 
     private val stateListener: (ShizukuStateMachine.State) -> Unit = {
         if (ShizukuStateMachine.isRunning()) {
@@ -120,14 +129,7 @@ abstract class HomeActivity : AppBarActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // The content must carry the scrolling-view behaviour like every View-based
-        // child of the CoordinatorLayout root, or it renders from under the toolbar.
-        val params = CoordinatorLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT,
-        ).apply { behavior = AppBarLayout.ScrollingViewBehavior() }
-
-        setContentView(ComposeView(this).apply {
+        setContent {
             setContent {
                 val status by homeModel.serviceStatus.asFlow()
                     .collectAsStateWithLifecycle(initialValue = null)
@@ -139,41 +141,65 @@ abstract class HomeActivity : AppBarActivity() {
                     blackNightTheme = ThemeHelper.isBlackNightTheme(this@HomeActivity),
                     useSystemColor = ThemeHelper.isUsingSystemColor(),
                 ) {
-                    HomeScreen(
-                        status = status?.data,
-                        grantedCount = grantedCount?.data ?: 0,
-                        suiUrl = Helps.SUI.get(),
-                        adbHelpUrl = Helps.ADB.get(),
-                        adbPermissionHelpUrl = Helps.ADB_PERMISSION.get(),
-                        wadbGuideUrl = Helps.ADB_ANDROID11.get(),
-                        onManageApps = {
-                            startActivity(Intent(this@HomeActivity, ApplicationManagementActivity::class.java))
-                        },
-                        onTerminal = {
-                            startActivity(Intent(this@HomeActivity, ShellTutorialActivity::class.java))
-                        },
-                        onStartRoot = {
-                            val intent = Intent(this@HomeActivity, StarterActivity::class.java)
-                            intent.putExtra(StarterActivity.EXTRA_IS_ROOT, true)
-                            startActivity(intent)
-                        },
-                        onStartWirelessAdb = { startViaWirelessAdb() },
-                        onPair = { onPairClicked() },
-                        onViewWadbGuide = {
-                            CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_ANDROID11.get())
-                        },
-                        onViewAdbCommand = { showAdbCommandDialog() },
-                        onAutomationSheet = { showAutomationSheet() },
-                        onStealth = {
-                            startActivity(Intent(this@HomeActivity, StealthTutorialActivity::class.java))
-                        },
-                        onLearnMore = {
-                            CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.HOME.get())
-                        },
-                        onAdbPermissionHelp = {
-                            CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_PERMISSION.get())
-                        },
-                    )
+                AppPageScaffold(
+                    title = this@HomeActivity.activityTitle(),
+                    onBack = { this@HomeActivity.finish() },
+                    snackbarHost = { AppSnackbarHost(hostState = snackbarHostState) },
+                    actions = {
+                        AppIconButton(
+                            onClick = {
+                                startActivity(Intent(this@HomeActivity, SettingsActivity::class.java))
+                            },
+                        ) {
+                            AppIcon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = stringResource(R.string.settings_title),
+                            )
+                        }
+                        AppIconButton(onClick = { overflowMenu = true }) {
+                            AppIcon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.action_about),
+                            )
+                        }
+                    },
+                ) { contentPadding, scrollModifier ->
+                HomeScreen(
+                    status = status?.data,
+                    grantedCount = grantedCount?.data ?: 0,
+                    suiUrl = Helps.SUI.get(),
+                    adbHelpUrl = Helps.ADB.get(),
+                    adbPermissionHelpUrl = Helps.ADB_PERMISSION.get(),
+                    wadbGuideUrl = Helps.ADB_ANDROID11.get(),
+                    onManageApps = {
+                        startActivity(Intent(this@HomeActivity, ApplicationManagementActivity::class.java))
+                    },
+                    onTerminal = {
+                        startActivity(Intent(this@HomeActivity, ShellTutorialActivity::class.java))
+                    },
+                    onStartRoot = {
+                        val intent = Intent(this@HomeActivity, StarterActivity::class.java)
+                        intent.putExtra(StarterActivity.EXTRA_IS_ROOT, true)
+                        startActivity(intent)
+                    },
+                    onStartWirelessAdb = { startViaWirelessAdb() },
+                    onPair = { onPairClicked() },
+                    onViewWadbGuide = {
+                        CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_ANDROID11.get())
+                    },
+                    onViewAdbCommand = { showAdbCommandDialog() },
+                    onAutomationSheet = { showAutomationSheet() },
+                    onStealth = {
+                        startActivity(Intent(this@HomeActivity, StealthTutorialActivity::class.java))
+                    },
+                    onLearnMore = {
+                        CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.HOME.get())
+                    },
+                    onAdbPermissionHelp = {
+                        CustomTabsHelper.launchUrlOrCopy(this@HomeActivity, Helps.ADB_PERMISSION.get())
+                    },
+                )
+                }
 
                 if (aboutDialog) {
                     val icon = AppIconCache.getOrLoadBitmap(
@@ -341,6 +367,29 @@ abstract class HomeActivity : AppBarActivity() {
                     )
                 }
 
+                if (overflowMenu) {
+                    AppListPopup(
+                        show = true,
+                        onDismissRequest = { overflowMenu = false },
+                        items = listOf(
+                            AppListPopupItem(
+                                label = stringResource(R.string.action_stop),
+                                onClick = {
+                                    overflowMenu = false
+                                    if (ShizukuStateMachine.isRunning()) stopConfirm = true
+                                },
+                            ),
+                            AppListPopupItem(
+                                label = stringResource(R.string.action_about),
+                                onClick = {
+                                    overflowMenu = false
+                                    aboutDialog = true
+                                },
+                            ),
+                        ),
+                    )
+                }
+
                 AppSnackbarHost(hostState = snackbarHostState)
 
                 LaunchedEffect(batterySnackbar) {
@@ -370,6 +419,24 @@ abstract class HomeActivity : AppBarActivity() {
                     updateSnackbar = false
                 }
 
+                if (adbPairing) {
+                    val multiWindow = isInMultiWindowMode ||
+                        (window.decorView.display?.displayId ?: -1) > 0
+                    AppAlertDialog(
+                        onDismissRequest = { adbPairing = false },
+                        text = {
+                            AdbPairDialogContent(
+                                viewModel = adbPairModel,
+                                multiWindow = multiWindow,
+                                onDismiss = { adbPairing = false },
+                                onOpenDevelopmentSettings = {
+                                    SettingsHelper.launchOrHighlightWirelessDebugging(this@HomeActivity)
+                                },
+                            )
+                        },
+                    )
+                }
+
                 if (adbDiscovery) {
                     AdbDiscoveryDialog(onDismiss = { adbDiscovery = false })
                 }
@@ -387,7 +454,7 @@ abstract class HomeActivity : AppBarActivity() {
                 }
                 }
             }
-        }, params)
+        }
 
         homeModel.serviceStatus.observe(this) {
             if (it.status == Status.SUCCESS) {
@@ -506,7 +573,7 @@ abstract class HomeActivity : AppBarActivity() {
             // Running in a multi-display environment (e.g., Windows Subsystem for Android),
             // pairing dialog can be displayed simultaneously with Shizuku.
             // Input from notification is harder to use under this situation.
-            AdbPairDialogFragment().show(supportFragmentManager)
+            adbPairing = true
         } else {
             startActivity(Intent(this, AdbPairingTutorialActivity::class.java))
         }
@@ -521,31 +588,6 @@ abstract class HomeActivity : AppBarActivity() {
     override fun onDestroy() {
         ShizukuStateMachine.removeListener(stateListener)
         super.onDestroy()
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_about -> {
-                aboutDialog = true
-                true
-            }
-            R.id.action_stop -> {
-                if (ShizukuStateMachine.isRunning()) {
-                    stopConfirm = true
-                }
-                true
-            }
-            R.id.action_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 
 

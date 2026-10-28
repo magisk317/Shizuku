@@ -2,9 +2,7 @@ package moe.shizuku.manager.home
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.app.Dialog
 import android.os.Build.VERSION_CODES
-import android.os.Bundle
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
@@ -21,18 +19,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.AndroidViewModel
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.surface.AppTextField
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
 import java.net.ConnectException
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -49,50 +48,10 @@ import moe.shizuku.manager.adb.AdbMdns
 import moe.shizuku.manager.adb.AdbPairingClient
 import moe.shizuku.manager.adb.PreferenceAdbKeyStore
 import moe.shizuku.manager.utils.SettingsHelper
-import io.github.magisk317.uikit.surface.AppTextButton
-import io.github.magisk317.uikit.text.AppText
-import io.github.magisk317.uikit.text.AppTextRole
-import androidx.compose.ui.text.TextStyle
-import io.github.magisk317.uikit.surface.AppTextField
-
-@RequiresApi(VERSION_CODES.R)
-class AdbPairDialogFragment : DialogFragment() {
-
-    private val viewModel: ViewModel by activityViewModels()
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val context = requireContext()
-        val multiWindow = requireActivity().isInMultiWindowMode ||
-            (requireActivity().window?.decorView?.display?.displayId ?: -1) > 0
-
-        val content = ComposeView(context).apply {
-            setContent {
-                AdbPairDialogContent(
-                    viewModel = viewModel,
-                    multiWindow = multiWindow,
-                    onDismiss = { dismissAllowingStateLoss() },
-                    onOpenDevelopmentSettings = {
-                        SettingsHelper.launchOrHighlightWirelessDebugging(context)
-                    },
-                )
-            }
-        }
-
-        return MaterialAlertDialogBuilder(context)
-            .setView(content)
-            .create()
-            .apply { setCanceledOnTouchOutside(false) }
-    }
-
-    fun show(fragmentManager: FragmentManager) {
-        if (fragmentManager.isStateSaved) return
-        show(fragmentManager, javaClass.simpleName)
-    }
-}
 
 @Composable
-private fun AdbPairDialogContent(
-    viewModel: ViewModel,
+fun AdbPairDialogContent(
+    viewModel: AdbPairViewModel,
     multiWindow: Boolean,
     onDismiss: () -> Unit,
     onOpenDevelopmentSettings: () -> Unit,
@@ -231,7 +190,7 @@ sealed interface PairingResult {
 }
 
 @SuppressLint("NewApi")
-class ViewModel(application: Application) : AndroidViewModel(application) {
+class AdbPairViewModel(application: Application) : AndroidViewModel(application) {
 
     private val appContext = getApplication<Application>().applicationContext
 

@@ -1,21 +1,14 @@
 package moe.shizuku.manager.settings
 
-import android.app.Dialog
-import android.app.NotificationManager
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -26,72 +19,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.fragment.app.DialogFragment
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppHorizontalDivider
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
 import moe.shizuku.manager.BuildConfig
 import moe.shizuku.manager.R
 import moe.shizuku.manager.utils.CustomTabsHelper
 import moe.shizuku.manager.worker.AdbStartWorker
-import io.github.magisk317.uikit.surface.AppHorizontalDivider
-import io.github.magisk317.uikit.text.AppText
-import io.github.magisk317.uikit.text.AppTextRole
-
-class BugReportDialog : DialogFragment() {
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val context = requireContext()
-
-        val content = ComposeView(context).apply {
-            setContent { BugReportContent() }
-        }
-
-        return MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.settings_report_bug)
-            .setView(content)
-            .setPositiveButton("GitHub") { _, _ ->
-                CustomTabsHelper.launchUrlOrCopy(context, "https://github.com/magisk317/Shizuku/issues/new")
-            }
-            .setNegativeButton(R.string.bug_report_dialog_button_email) { _, _ ->
-                val plainBody = """
-                    Please describe the bug. Include steps to reproduce if possible, as well as any relevant images/logs.
-
-                    Device: ${Build.MANUFACTURER} ${Build.MODEL}
-                    Android Version: ${Build.VERSION.RELEASE}
-                    Shizuku Version: ${BuildConfig.VERSION_NAME}
-                """.trimIndent()
-
-                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(
-                    "mailto:" + context.getString(R.string.support_email) +
-                    "?subject=" + Uri.encode("[ISSUE TITLE]") +
-                    "&body=" + Uri.encode(plainBody)
-                ))
-                try {
-                    context.startActivity(intent)
-                    dismiss()
-                } catch (e: ActivityNotFoundException) {
-                    Toast.makeText(context, context.getString(R.string.toast_no_email_app), Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNeutralButton(android.R.string.cancel) { dialog, _ ->
-                dialog.cancel()
-            }
-            .create()
-    }
-
-    override fun onCancel(dialog: DialogInterface) {
-        super.onCancel(dialog)
-        val nm = requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.cancel(AdbStartWorker.NOTIFICATION_ID)
-    }
-
-    override fun onDismiss(dialog: DialogInterface) {
-        super.onDismiss(dialog)
-        if (activity is BugReportDialogActivity) activity?.finish()
-    }
-}
 
 @Composable
-private fun BugReportContent() {
+fun BugReportContent() {
     val context = LocalContext.current
     val updateLink = templateWithLink(
         templateRes = R.string.bug_report_dialog_update,
