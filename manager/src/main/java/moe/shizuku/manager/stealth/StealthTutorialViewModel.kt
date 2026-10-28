@@ -3,9 +3,9 @@ package moe.shizuku.manager.stealth
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
@@ -46,8 +46,8 @@ class StealthTutorialViewModel(
     private val app: Application = getApplication()
     private val appContext = app.applicationContext
 
-    private val _uiState = MutableLiveData<UiState>(UiState.Idle(Action.HIDE))
-    val uiState: LiveData<UiState> = _uiState
+    private val _uiState = MutableStateFlow<UiState>(UiState.Idle(Action.HIDE))
+    val uiState: StateFlow<UiState> = _uiState
 
     private var _packageName: String? = null
 
@@ -75,7 +75,7 @@ class StealthTutorialViewModel(
     fun createApk(apkType: ApkType) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                _uiState.postValue(UiState.Loading)
+                _uiState.value = UiState.Loading
 
                 val apk =
                     when (apkType) {
@@ -86,9 +86,9 @@ class StealthTutorialViewModel(
                         ApkType.STUB -> createStubApk(ORIGINAL_PACKAGE_NAME)
                     }
 
-                _uiState.postValue(UiState.Pending(apk, apkType))
+                _uiState.value = UiState.Pending(apk, apkType)
             } catch (e: Exception) {
-                _uiState.postValue(UiState.Error(e))
+                _uiState.value = UiState.Error(e)
                 Log.e("StealthTutorialViewModel", "Error creating APK", e)
             }
         }

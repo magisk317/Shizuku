@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -24,6 +25,7 @@ import io.github.magisk317.uikit.surface.AppIcon
 import io.github.magisk317.uikit.surface.AppTextButton
 import io.github.magisk317.uikit.text.AppText
 import java.util.Objects
+import kotlinx.coroutines.launch
 import moe.shizuku.manager.Helps
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
@@ -60,18 +62,24 @@ class ApplicationManagementActivity : ComponentActivity() {
             return
         }
 
-        viewModel.packages.observe(this) {
-            if (it.status == Status.ERROR) {
-                finish()
-                val tr = it.error
-                Toast.makeText(this, Objects.toString(tr, "unknown"), Toast.LENGTH_SHORT).show()
-                tr.printStackTrace()
+        lifecycleScope.launch {
+            viewModel.packages.collect { resource ->
+                if (resource?.status == Status.ERROR) {
+                    finish()
+                    val tr = resource.error
+                    Toast.makeText(
+                        this@ApplicationManagementActivity,
+                        Objects.toString(tr, "unknown"),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    tr.printStackTrace()
+                }
             }
         }
         viewModel.load()
 
         setContent {
-            val packages by viewModel.packages.asFlow()
+            val packages by viewModel.packages
                 .collectAsStateWithLifecycle(initialValue = null)
 
             ShizukuTheme(

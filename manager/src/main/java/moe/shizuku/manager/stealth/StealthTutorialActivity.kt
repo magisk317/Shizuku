@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -40,6 +41,7 @@ import io.github.magisk317.uikit.surface.AppTopBar
 import io.github.magisk317.uikit.surface.ConfirmActionDialog
 import io.github.magisk317.uikit.text.AppText
 import java.io.File
+import kotlinx.coroutines.launch
 import moe.shizuku.manager.AppConstants
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
@@ -66,8 +68,8 @@ class StealthTutorialActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, backCallback)
 
         setContent {
-            val state by viewModel.uiState.asFlow()
-                .collectAsStateWithLifecycle(initialValue = null)
+            val state by viewModel.uiState
+                .collectAsStateWithLifecycle()
 
             ShizukuTheme(
                 nightMode = ShizukuSettings.getNightMode(),
@@ -152,30 +154,33 @@ class StealthTutorialActivity : ComponentActivity() {
             }
         }
 
-        viewModel.uiState.observe(this) { state ->
-            when (state) {
-                is UiState.Idle -> if (state.action == Action.HIDE) makeNavBarTransparent()
-                is UiState.Pending -> {
-                    try {
-                        val apk = state.apk
-                        when (state.apkType) {
-                            ApkType.CLONE -> {
-                                export(apk)
-                                viewModel.refresh()
-                                uninstallRequired = true
-                            }
-
-                            ApkType.STUB -> {
-                                installPackage(apk) { isSuccess, msg -> handleInstallerResult(isSuccess, msg) }
-                            }
+        lifecycleScope.launch {
+            viewModel.uiState.collect { state ->
+        when (state) {
+            is UiState.Idle -> if (state.action == Action.HIDE) makeNavBarTransparent()
+            is UiState.Pending -> {
+                try {
+                    val apk = state.apk
+                    when (state.apkType) {
+                        ApkType.CLONE -> {
+                            export(apk)
+                            viewModel.refresh()
+                            uninstallRequired = true
                         }
-                    } catch (e: Exception) {
-                        showError(e)
-                    }
-                }
 
-                is UiState.Error -> showError(state.error)
-                is UiState.Loading, null -> Unit
+                        ApkType.STUB -> {
+                            installPackage(apk) { isSuccess, msg -> handleInstallerResult(isSuccess, msg) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    showError(e)
+                }
+            }
+
+            is UiState.Error -> showError(state.error)
+            is UiState.Loading -> Unit
+        }
+    
             }
         }
     }
@@ -277,7 +282,7 @@ class StealthTutorialActivity : ComponentActivity() {
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val uiState = viewModel.uiState.value
-                if (uiState is UiState.Idle || uiState is UiState.Error || uiState == null) {
+                if (uiState is UiState.Idle || uiState is UiState.Error) {
                     finish()
                     return
                 }

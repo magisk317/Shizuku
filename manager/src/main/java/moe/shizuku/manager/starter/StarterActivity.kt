@@ -3,6 +3,9 @@ package moe.shizuku.manager.starter
 import android.app.Application
 import android.os.Bundle
 import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,14 +16,28 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.topjohnwu.superuser.CallbackList
 import com.topjohnwu.superuser.Shell
+import io.github.magisk317.uikit.surface.AppAlertDialog
+import io.github.magisk317.uikit.surface.AppIcon
+import io.github.magisk317.uikit.surface.AppIconButton
+import io.github.magisk317.uikit.surface.AppScaffold
+import io.github.magisk317.uikit.surface.AppTextButton
+import io.github.magisk317.uikit.surface.AppTopBar
+import io.github.magisk317.uikit.text.AppText
+import io.github.magisk317.uikit.text.AppTextRole
+import io.github.magisk317.uikit.theme.AppColorRole
+import io.github.magisk317.uikit.theme.appColor
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import javax.net.ssl.SSLProtocolException
@@ -28,6 +45,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -35,28 +54,10 @@ import moe.shizuku.manager.AppConstants.EXTRA
 import moe.shizuku.manager.R
 import moe.shizuku.manager.adb.AdbKeyException
 import moe.shizuku.manager.adb.AdbStarter
+import moe.shizuku.manager.ktx.activityTitle
 import moe.shizuku.manager.utils.ShizukuStateMachine
 import rikka.lifecycle.Resource
 import rikka.lifecycle.Status
-import io.github.magisk317.uikit.text.AppText
-import io.github.magisk317.uikit.theme.AppColorRole
-import io.github.magisk317.uikit.theme.appColor
-import io.github.magisk317.uikit.text.AppTextRole
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.viewModels
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import io.github.magisk317.uikit.surface.AppAlertDialog
-import io.github.magisk317.uikit.surface.AppIcon
-import io.github.magisk317.uikit.surface.AppIconButton
-import io.github.magisk317.uikit.surface.AppScaffold
-import io.github.magisk317.uikit.surface.AppTextButton
-import io.github.magisk317.uikit.surface.AppTopBar
-import moe.shizuku.manager.ktx.activityTitle
 
 private class NotRootedException: Exception()
 
@@ -127,37 +128,39 @@ class StarterActivity : ComponentActivity() {
             }
         }
 
-        viewModel.output.observe(this) {
-            val output = it.data!!.trim()
-            if (output.endsWith(Starter.serviceStartedMessage)) {
-                window?.decorView?.postDelayed({
-                    if (!isFinishing) finish()
-                }, 3000)
-            } else if (it.status == Status.ERROR) {
-                var message = 0
-                when (it.error) {
-                    is AdbKeyException -> {
-                        message = R.string.adb_error_key_store
-                    }
-                    is NotRootedException -> {
-                        message = R.string.start_with_root_failed
-                    }
-                    is SocketTimeoutException -> {
-                        message = R.string.cannot_connect_port
-                    }
-                    is ConnectException -> {
-                        message = R.string.cannot_connect_port
-                    }
-                    is SSLProtocolException -> {
-                        message = R.string.adb_pair_required
-                    }
+        lifecycleScope.launch {
+            viewModel.output.collect { resource ->
+                val output = resource?.data?.toString()?.trim().orEmpty()
+                if (output.endsWith(Starter.serviceStartedMessage)) {
+                    window?.decorView?.postDelayed({
+                        if (!isFinishing) finish()
+                    }, 3000)
+                } else if (resource?.status == Status.ERROR) {
+                    var message = 0
+                    when (resource.error) {
+                is AdbKeyException -> {
+                    message = R.string.adb_error_key_store
                 }
+                is NotRootedException -> {
+                    message = R.string.start_with_root_failed
+                }
+                is SocketTimeoutException -> {
+                    message = R.string.cannot_connect_port
+                }
+                is ConnectException -> {
+                    message = R.string.cannot_connect_port
+                }
+                is SSLProtocolException -> {
+                    message = R.string.adb_pair_required
+                }
+            }
 
                 if (message != 0) {
                     errorMessageRes.intValue = message
                 }
             }
-            outputState.value = output.toString()
+            outputState.value = output
+            }
         }
     }
 
@@ -186,9 +189,8 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext = getApplication<Application>().applicationContext
 
     private val sb = StringBuilder()
-    private val _output = MutableLiveData<Resource<StringBuilder>>()
-
-    val output = _output as LiveData<Resource<StringBuilder>>
+    private val _output = MutableStateFlow<Resource<StringBuilder>?>(null)
+    val output: StateFlow<Resource<StringBuilder>?> = _output
 
     private val handler = CoroutineExceptionHandler { _, throwable ->
         ShizukuStateMachine.update()
@@ -212,8 +214,8 @@ class ViewModel(application: Application) : AndroidViewModel(application) {
         line?.let { sb.appendLine(it) }
         error?.let { sb.appendLine().appendLine(Log.getStackTraceString(it)) }
 
-        if (error == null) _output.postValue(Resource.success(sb))
-        else _output.postValue(Resource.error(error, sb))
+        if (error == null) _output.value = Resource.success(sb)
+        else _output.value = Resource.error(error, sb)
     }
 
     private suspend fun startRoot() {

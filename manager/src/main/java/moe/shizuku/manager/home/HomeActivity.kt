@@ -130,9 +130,9 @@ abstract class HomeActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            val status by homeModel.serviceStatus.asFlow()
+            val status by homeModel.serviceStatus
                 .collectAsStateWithLifecycle(initialValue = null)
-            val grantedCount by appsModel.grantedCount.asFlow()
+            val grantedCount by appsModel.grantedCount
                 .collectAsStateWithLifecycle(initialValue = null)
 
             ShizukuTheme(
@@ -456,29 +456,40 @@ abstract class HomeActivity : ComponentActivity() {
             }
         }
 
-        homeModel.serviceStatus.observe(this) {
-            if (it.status == Status.SUCCESS) {
-                val status = homeModel.serviceStatus.value?.data ?: return@observe
-                ShizukuSettings.setLastLaunchMode(if (status.uid == 0) ShizukuSettings.LaunchMethod.ROOT else ShizukuSettings.LaunchMethod.ADB)
+        lifecycleScope.launch {
+            homeModel.serviceStatus.collect { resource ->
+                if (resource?.status == Status.SUCCESS) {
+                    val status = resource.data ?: return@collect
+                    ShizukuSettings.setLastLaunchMode(
+                        if (status.uid == 0) ShizukuSettings.LaunchMethod.ROOT
+                        else ShizukuSettings.LaunchMethod.ADB,
+                    )
+                }
             }
         }
 
-        homeModel.shouldShowRebootDialog.observe(this) { shouldShow ->
-            if (shouldShow) showExitDialog(
-                getString(R.string.home_dialog_reboot_required_title),
-                getString(R.string.home_dialog_reboot_required_message)
-            )
+        lifecycleScope.launch {
+            homeModel.shouldShowRebootDialog.collect { shouldShow ->
+                if (shouldShow) showExitDialog(
+                    getString(R.string.home_dialog_reboot_required_title),
+                    getString(R.string.home_dialog_reboot_required_message),
+                )
+            }
         }
 
-        homeModel.shouldShowUninstallDialog.observe(this) { shouldShow ->
-            if (shouldShow) showExitDialog(
-                getString(R.string.home_dialog_duplicate_app_detected_title),
-                getString(R.string.home_dialog_duplicate_app_detected_message)
-            )
+        lifecycleScope.launch {
+            homeModel.shouldShowUninstallDialog.collect { shouldShow ->
+                if (shouldShow) showExitDialog(
+                    getString(R.string.home_dialog_duplicate_app_detected_title),
+                    getString(R.string.home_dialog_duplicate_app_detected_message),
+                )
+            }
         }
 
-        homeModel.shouldShowBatteryOptimizationSnackbar.observe(this) { shouldShow ->
-            if (shouldShow) batterySnackbar = true
+        lifecycleScope.launch {
+            homeModel.shouldShowBatteryOptimizationSnackbar.collect { shouldShow ->
+                if (shouldShow) batterySnackbar = true
+            }
         }
         homeModel.checkBatteryOptimization()
 

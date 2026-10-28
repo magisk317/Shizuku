@@ -5,9 +5,9 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.pm.PermissionInfo
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,17 +27,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val appContext: Context = getApplication<Application>().applicationContext
 
-    private val _serviceStatus = MutableLiveData<Resource<ServiceStatus>>()
-    val serviceStatus = _serviceStatus as LiveData<Resource<ServiceStatus>>
+    private val _serviceStatus = MutableStateFlow<Resource<ServiceStatus>?>(null)
+    val serviceStatus: StateFlow<Resource<ServiceStatus>?> = _serviceStatus
 
-    private val _shouldShowBatteryOptimizationSnackbar = MutableLiveData<Boolean>(false)
-    val shouldShowBatteryOptimizationSnackbar: LiveData<Boolean> = _shouldShowBatteryOptimizationSnackbar
+    private val _shouldShowBatteryOptimizationSnackbar = MutableStateFlow(false)
+    val shouldShowBatteryOptimizationSnackbar: StateFlow<Boolean> = _shouldShowBatteryOptimizationSnackbar
 
-    private val _shouldShowRebootDialog = MutableLiveData<Boolean>(false)
-    val shouldShowRebootDialog: LiveData<Boolean> = _shouldShowRebootDialog
+    private val _shouldShowRebootDialog = MutableStateFlow(false)
+    val shouldShowRebootDialog: StateFlow<Boolean> = _shouldShowRebootDialog
 
-    private val _shouldShowUninstallDialog = MutableLiveData<Boolean>(false)
-    val shouldShowUninstallDialog: LiveData<Boolean> = _shouldShowUninstallDialog
+    private val _shouldShowUninstallDialog = MutableStateFlow(false)
+    val shouldShowUninstallDialog: StateFlow<Boolean> = _shouldShowUninstallDialog
 
     private fun load(): ServiceStatus {
         // In certain cases when user re-installs Shizuku with different package name (e.g., when using stealth mode), the system doesn't recognize the Shizuku permission.
@@ -48,10 +48,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val permissionGroup = appContext.packageManager.getPermissionGroupInfo(Manifest.permission_group.API, 0)
             val permission = appContext.packageManager.getPermissionInfo(Manifest.permission.API_V23, 0)
             if (permission.packageName != appContext.packageName) {
-                _shouldShowUninstallDialog.postValue(true)
+                _shouldShowUninstallDialog.value = true
             }
         } catch (e: PackageManager.NameNotFoundException) {
-            _shouldShowRebootDialog.postValue(true)
+            _shouldShowRebootDialog.value = true
         }
 
         if (!ShizukuStateMachine.isRunning()) {
@@ -82,11 +82,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val status = load()
-                _serviceStatus.postValue(Resource.success(status))
+                _serviceStatus.value = Resource.success(status)
             } catch (e: CancellationException) {
 
             } catch (e: Throwable) {
-                _serviceStatus.postValue(Resource.error(e, ServiceStatus()))
+                _serviceStatus.value = Resource.error(e, ServiceStatus())
             }
         }
     }
@@ -94,9 +94,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun checkBatteryOptimization() {
         if (EnvironmentUtils.isTelevision()) return
         if (!ShizukuSettings.getStartOnBoot(appContext) && !ShizukuSettings.getWatchdog()) return
-        _shouldShowBatteryOptimizationSnackbar.postValue(
+        _shouldShowBatteryOptimizationSnackbar.value =
             !SettingsHelper.isIgnoringBatteryOptimizations(appContext)
-        )
     }
 
 }
