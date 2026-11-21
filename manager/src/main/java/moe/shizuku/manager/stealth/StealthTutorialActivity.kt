@@ -1,5 +1,11 @@
 package moe.shizuku.manager.stealth
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
 import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
@@ -31,7 +37,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.magisk317.uikit.surface.AppAlertDialog
 import io.github.magisk317.uikit.surface.AppCircularProgressIndicator
-import io.github.magisk317.uikit.surface.AppExtendedFloatingActionButton
 import io.github.magisk317.uikit.surface.AppFloatingActionButton
 import io.github.magisk317.uikit.surface.AppIcon
 import io.github.magisk317.uikit.surface.AppIconButton
@@ -240,14 +245,7 @@ class StealthTutorialActivity : ComponentActivity() {
         }
         if (action == null) return
 
-        AppExtendedFloatingActionButton(
-            text = stringResource(
-                if (action == Action.UNHIDE) R.string.stealth_unhide else R.string.stealth_hide,
-            ),
-            icon = painterResource(
-                if (action == Action.UNHIDE) R.drawable.ic_visibility_on_filled_24
-                else R.drawable.ic_visibility_off_filled_24,
-            ),
+        AppFloatingActionButton(
             onClick = {
                 if (stealthPackageName.validatePackageName() == null) {
                     viewModel.setPackageName(stealthPackageName)
@@ -260,7 +258,24 @@ class StealthTutorialActivity : ComponentActivity() {
                     }
                 }
             },
-        )
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(
+                        if (action == Action.UNHIDE) R.drawable.ic_visibility_on_filled_24
+                        else R.drawable.ic_visibility_off_filled_24,
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(
+                        if (action == Action.UNHIDE) R.string.stealth_unhide else R.string.stealth_hide,
+                    ),
+                )
+            }
+        }
     }
 
     private fun handleInstallerResult(isSuccess: Boolean, msg: String?) {

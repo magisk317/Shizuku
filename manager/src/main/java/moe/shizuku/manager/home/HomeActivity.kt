@@ -1,5 +1,8 @@
 package moe.shizuku.manager.home
 
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
 import android.Manifest.permission.WRITE_SECURE_SETTINGS
 import android.app.NotificationManager
 import android.content.Context
@@ -50,8 +53,6 @@ import io.github.magisk317.uikit.surface.AppAlertDialog
 import io.github.magisk317.uikit.surface.AppBottomSheet
 import io.github.magisk317.uikit.surface.AppIcon
 import io.github.magisk317.uikit.surface.AppIconButton
-import io.github.magisk317.uikit.surface.AppListPopup
-import io.github.magisk317.uikit.surface.AppListPopupItem
 import io.github.magisk317.uikit.surface.AppTextButton
 import io.github.magisk317.uikit.surface.ConfirmActionDialog
 import io.github.magisk317.uikit.text.AppText
@@ -368,26 +369,25 @@ abstract class HomeActivity : ComponentActivity() {
             }
 
             if (overflowMenu) {
-                AppListPopup(
-                    show = true,
+                DropdownMenu(
+                    expanded = overflowMenu,
                     onDismissRequest = { overflowMenu = false },
-                    items = listOf(
-                        AppListPopupItem(
-                            label = stringResource(R.string.action_stop),
-                            onClick = {
-                                overflowMenu = false
-                                if (ShizukuStateMachine.isRunning()) stopConfirm = true
-                            },
-                        ),
-                        AppListPopupItem(
-                            label = stringResource(R.string.action_about),
-                            onClick = {
-                                overflowMenu = false
-                                aboutDialog = true
-                            },
-                        ),
-                    ),
-                )
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_stop)) },
+                        onClick = {
+                            overflowMenu = false
+                            if (ShizukuStateMachine.isRunning()) stopConfirm = true
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_about)) },
+                        onClick = {
+                            overflowMenu = false
+                            aboutDialog = true
+                        },
+                    )
+                }
             }
 
             AppSnackbarHost(hostState = snackbarHostState)

@@ -38,7 +38,6 @@ import moe.shizuku.manager.utils.ShizukuSystemApis
 import moe.shizuku.manager.utils.UserHandleCompat
 import io.github.magisk317.uikit.preference.AppSwitch
 import io.github.magisk317.uikit.surface.AppHorizontalDivider
-import io.github.magisk317.uikit.surface.AppIcon
 import io.github.magisk317.uikit.text.AppText
 import io.github.magisk317.uikit.text.AppTextRole
 import io.github.magisk317.uikit.theme.AppColorRole
@@ -118,7 +117,7 @@ private fun AppRow(pi: PackageInfo, revision: Int, onToggle: (PackageInfo) -> Un
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        AppIcon(ai)
+        LauncherAppIcon(ai)
         Column(Modifier.weight(1f)) {
             AppText(title, role = AppTextRole.BodyLarge)
             AppText(
@@ -140,7 +139,7 @@ private fun AppRow(pi: PackageInfo, revision: Int, onToggle: (PackageInfo) -> Un
 
 /** The View list used AppIconCache's async loader; same cache, now into state. */
 @Composable
-private fun AppIcon(ai: ApplicationInfo) {
+private fun LauncherAppIcon(ai: ApplicationInfo) {
     val context = LocalContext.current
     val size = remember { context.resources.getDimensionPixelSize(R.dimen.default_app_icon_size) }
     var bitmap by remember(ai.packageName) { mutableStateOf<Bitmap?>(null) }
